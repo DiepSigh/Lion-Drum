@@ -6,18 +6,22 @@ using UnityEngine.Advertisements;
 public class MakeMeMoney : MonoBehaviour
 {
 
-    string game_ID = "3744029"
-    bool testMode = true;
+    string gameID = "3744029";
+    public string placementID = "bannerPlacement";
+    public bool testMode = true;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        Advertisement.Initialize(game_ID, testMode);
+    void Start () {
+        Advertisement.Initialize(gameID, testMode);
+        StartCoroutine(ShowBannerWhenInitialized());
     }
 
-    // Update is called once per frame
-    void Update()
-    {
+    IEnumerator ShowBannerWhenInitialized () {
+        while (!Advertisement.isInitialized) {
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        Advertisement.Banner.SetPosition (BannerPosition.TOP_CENTER);
+        Advertisement.Banner.Show (placementID);
         
     }
 }
