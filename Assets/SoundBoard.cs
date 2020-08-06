@@ -18,7 +18,7 @@ public class SoundBoard : MonoBehaviour
 
     bool recording;
     bool replaying;
-    const int STORAGE = 200; //how many beats stored
+    const int STORAGE = 300; //how many beats stored
     float[] nextBeatTime = new float[STORAGE]; //stores when next beat is played
     int[] beatType = new int[STORAGE]; //stores whether to play drum or side
     int count; //stores beat count

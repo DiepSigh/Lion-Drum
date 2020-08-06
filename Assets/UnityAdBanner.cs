@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Advertisements;
 
-public class MakeMeMoney : MonoBehaviour
+public class UnityAdBanner : MonoBehaviour
 {
 
     string gameID = "3744029";
