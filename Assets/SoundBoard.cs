@@ -13,6 +13,9 @@ public class SoundBoard : MonoBehaviour
 
     public AudioSource drumAudio;
     public AudioSource sideAudio;
+    public AudioSource cymbalAudio;
+    public AudioSource gongAudio;
+
     public Text recordText;
     public Text playText;
 
@@ -83,6 +86,30 @@ public class SoundBoard : MonoBehaviour
                 RecordToggle();
             }
         }
+    }
+
+    public void PlayCymbals(){
+        cymbalAudio.Play();
+        // if(recording){
+        //     nextBeatTime[count] = timestamp;
+        //     beatType[count] = 0;
+        //     count++;
+        //     if (CountOver()){
+        //         RecordToggle();
+        //     }
+        // }
+    }
+
+    public void PlayGong(){
+        gongAudio.Play();
+        // if(recording){
+        //     nextBeatTime[count] = timestamp;
+        //     beatType[count] = 0;
+        //     count++;
+        //     if (CountOver()){
+        //         RecordToggle();
+        //     }
+        // }
     }
     
     public void RecordToggle(){
