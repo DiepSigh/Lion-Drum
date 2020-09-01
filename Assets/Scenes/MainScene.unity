@@ -121,6 +121,109 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &91478212
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 91478213}
+  - component: {fileID: 91478216}
+  - component: {fileID: 91478215}
+  - component: {fileID: 91478214}
+  m_Layer: 5
+  m_Name: GongStopImage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &91478213
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91478212}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 1845927359}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -0.000061036, y: 0}
+  m_SizeDelta: {x: 944, y: 531}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &91478214
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91478212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Delegates:
+  - eventID: 2
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 519420030}
+          m_MethodName: StopGong
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+--- !u!114 &91478215
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91478212}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Material: {fileID: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
+  m_RaycastTarget: 1
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &91478216
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 91478212}
+  m_CullTransparentMesh: 0
 --- !u!1 &138113128
 GameObject:
   m_ObjectHideFlags: 0
@@ -153,7 +256,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 2
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
@@ -256,7 +359,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &238171876
 RectTransform:
   m_ObjectHideFlags: 0
@@ -270,7 +373,7 @@ RectTransform:
   m_Children:
   - {fileID: 632502715}
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 6
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
@@ -411,6 +514,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e74ba1418a5394441a107c6dec596c46, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UIManager: {fileID: 1350636870}
   drumAudio: {fileID: 519420033}
   sideAudio: {fileID: 519420034}
   cymbalAudio: {fileID: 519420036}
@@ -1046,12 +1150,12 @@ RectTransform:
   - {fileID: 1704827814}
   - {fileID: 940150298}
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 8
+  m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.5562, y: 0.9}
-  m_SizeDelta: {x: 781.11285, y: 428.34207}
+  m_AnchoredPosition: {x: 0, y: -11.051}
+  m_SizeDelta: {x: 727.6264, y: 370.10147}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &712714992
 MonoBehaviour:
@@ -1126,7 +1230,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 354, y: 191}
+  m_AnchoredPosition: {x: 321, y: 163.84}
   m_SizeDelta: {x: 50.98288, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &940150299
@@ -1172,7 +1276,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1350636868}
+      - m_Target: {fileID: 1350636870}
         m_MethodName: ToggleOff
         m_Mode: 1
         m_Arguments:
@@ -1330,7 +1434,7 @@ RectTransform:
   m_Children:
   - {fileID: 671833108}
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 9
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
@@ -1439,13 +1543,14 @@ GameObject:
   - component: {fileID: 1184530551}
   - component: {fileID: 1184530553}
   - component: {fileID: 1184530552}
+  - component: {fileID: 1184530554}
   m_Layer: 5
-  m_Name: Background
+  m_Name: CymbalStopImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1184530551
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1458,7 +1563,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 0
+  m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1502,6 +1607,34 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1184530550}
   m_CullTransparentMesh: 0
+--- !u!114 &1184530554
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1184530550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0b148fe25e99eb48b9724523833bab1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Delegates:
+  - eventID: 2
+    callback:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 519420030}
+          m_MethodName: StopCymbals
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
 --- !u!1 &1187102530
 GameObject:
   m_ObjectHideFlags: 0
@@ -1706,7 +1839,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1350636869}
-  - component: {fileID: 1350636868}
   - component: {fileID: 1350636870}
   m_Layer: 0
   m_Name: UIManager
@@ -1715,19 +1847,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1350636868
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1350636867}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96e0a3e23b496494cb83b11199817929, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  aboutImage: {fileID: 712714990}
 --- !u!4 &1350636869
 Transform:
   m_ObjectHideFlags: 0
@@ -1756,10 +1875,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   value: 0
   instrumentText: {fileID: 671833106}
+  instrumentButton: {fileID: 974973072}
   sideImage: {fileID: 2049619984}
   drumImage: {fileID: 138113128}
   cymbalImage: {fileID: 1187102530}
+  cymbalStopImage: {fileID: 1184530550}
   gongImage: {fileID: 2131833207}
+  gongStopImage: {fileID: 91478212}
+  aboutImage: {fileID: 712714990}
+  recordButton: {fileID: 2118299004}
+  playButton: {fileID: 238171875}
 --- !u!1 &1362973480
 GameObject:
   m_ObjectHideFlags: 0
@@ -1979,7 +2104,7 @@ RectTransform:
   m_Children:
   - {fileID: 1278881995}
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 7
+  m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
@@ -2029,7 +2154,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1350636868}
+      - m_Target: {fileID: 1350636870}
         m_MethodName: ToggleOn
         m_Mode: 1
         m_Arguments:
@@ -2111,8 +2236,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.5, y: 11}
-  m_SizeDelta: {x: 715.2061, y: 370.95126}
+  m_AnchoredPosition: {x: 0.00000023842, y: 10}
+  m_SizeDelta: {x: 710.45184, y: 337.67093}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1704827815
 MonoBehaviour:
@@ -2146,25 +2271,26 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'Version 0.1
+  m_Text: 'Version 0.2
 
 
-    Tap the circle (it''s actually a square) to play drum
-    beats. Anything outside plays the side beats.
+    Tap the circle to play drum beats. Anything outside
+    plays the side beats. You can switch instruments to cymbals or gong by pressting
+    the instrument button.
 
 
-    You can record and replay
-    something you just played. When Record is pressed, up to 300 beats played will
-    be recorded. To stop recording, hit the button again. You can then press Play
-    to play what you just played :) Enjoy
+    You can record and replay something you just played.
+    When Record is pressed, up to 300 beats played will be recorded. To stop recording,
+    hit the button again. You can then press Play to play what you just played :)
+    Enjoy
 
 
-    More features to be implemented in
-    the future. If there are any bugs or problems feel free to contact me as well.
+    More features to be implemented in the future. If there are any bugs
+    or problems feel free to contact me as well.
 
 
-    If
-    you like the app, please leave a good review!'
+    If you like the app, please
+    leave a good review!'
 --- !u!222 &1704827816
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -2263,16 +2389,17 @@ RectTransform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_Children:
-  - {fileID: 1184530551}
   - {fileID: 2049619985}
   - {fileID: 138113129}
+  - {fileID: 1184530551}
   - {fileID: 1187102531}
+  - {fileID: 91478213}
   - {fileID: 2131833212}
+  - {fileID: 974973073}
   - {fileID: 2118299005}
   - {fileID: 238171876}
   - {fileID: 1642947387}
   - {fileID: 712714991}
-  - {fileID: 974973073}
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2312,7 +2439,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -2332,7 +2459,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.7607844, g: 0.7607844, b: 0.7607844, a: 0}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -2416,7 +2543,7 @@ RectTransform:
   m_Children:
   - {fileID: 974385148}
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 5
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
@@ -2624,7 +2751,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1845927359}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
