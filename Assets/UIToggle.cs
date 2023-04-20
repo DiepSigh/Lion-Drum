@@ -7,6 +7,9 @@ public class UIToggle : MonoBehaviour
 {
 
     public int value;
+
+    public SoundBoard MainScreen;
+
     public Text instrumentText;
     public GameObject instrumentButton;
 
@@ -37,7 +40,9 @@ public class UIToggle : MonoBehaviour
             drumImage.SetActive(true);
             gongImage.SetActive(false);
             gongStopImage.SetActive(false);
-            RecordOn();
+            if (!MainScreen.replaying){
+                RecordOn();
+            }
         }else if (value==2){
             instrumentText.text = "Gong";
             gongImage.SetActive(true);

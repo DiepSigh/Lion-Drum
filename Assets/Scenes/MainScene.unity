@@ -533,6 +533,7 @@ MonoBehaviour:
   gongAudio: {fileID: 519420035}
   recordText: {fileID: 974385149}
   playText: {fileID: 632502716}
+  replaying: 0
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
@@ -1974,6 +1975,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   value: 0
+  MainScreen: {fileID: 519420030}
   instrumentText: {fileID: 671833106}
   instrumentButton: {fileID: 974973072}
   sideImage: {fileID: 2049619984}

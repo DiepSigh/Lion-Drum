@@ -22,7 +22,7 @@ public class SoundBoard : MonoBehaviour
     public Text playText;
 
     bool recording;
-    bool replaying;
+    public bool replaying;
     bool recorded;
     const int STORAGE = 3000; //how many beats stored
     float[] nextBeatTime = new float[STORAGE]; //stores when next beat is played
