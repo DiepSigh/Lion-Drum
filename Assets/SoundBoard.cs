@@ -25,12 +25,21 @@ public class SoundBoard : MonoBehaviour
     public bool replaying;
     bool recorded;
     const int STORAGE = 3000; //how many beats stored
-    float[] nextBeatTime = new float[STORAGE]; //stores when next beat is played
-    int[] beatType = new int[STORAGE]; //stores whether to play drum or side
-    int count; //stores beat count
-    int lastCount; //stores last recorded beat
+    float[] _nextBeatTime = new float[STORAGE]; //stores when next beat is played
+    int[] _beatType = new int[STORAGE]; //stores whether to play drum or side
+    int count; //stores beat count; used for replay
+    public int lastCount; //stores last recorded beat; last count of array
     float timestamp; //keeps track of current time
-    
+
+    public global::System.Single[] NextBeatTime {
+        get => _nextBeatTime;
+        set => _nextBeatTime = value;
+    }
+    public global::System.Int32[] BeatType {
+        get => _beatType;
+        set => _beatType = value; 
+    }
+
     void Start(){
         timestamp = 0;
         lastCount = STORAGE;
@@ -52,8 +61,8 @@ public class SoundBoard : MonoBehaviour
 
     public void PlayRecording(){
         //If current updated timestamp goes over next beat count, play the recorded beat.
-        if (timestamp >= nextBeatTime[count]){
-            if (beatType[count] == 0){
+        if (timestamp >= NextBeatTime[count]){
+            if (BeatType[count] == 0){
                 PlayDrum();
             }else{
                 PlaySide();
@@ -71,8 +80,8 @@ public class SoundBoard : MonoBehaviour
         drumAudio.Play();
         if(recording){
             RecordedToggle();
-            nextBeatTime[count] = timestamp;
-            beatType[count] = 0;
+            NextBeatTime[count] = timestamp;
+            BeatType[count] = 0;
             count++;
             if (CountOver()){
                 RecordToggle();
@@ -84,8 +93,8 @@ public class SoundBoard : MonoBehaviour
         sideAudio.Play();
         if(recording){
             RecordedToggle();
-            nextBeatTime[count] = timestamp;
-            beatType[count] = 1;
+            NextBeatTime[count] = timestamp;
+            BeatType[count] = 1;
             count++;
             if (CountOver()){
                 RecordToggle();
