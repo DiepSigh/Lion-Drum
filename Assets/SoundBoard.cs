@@ -109,6 +109,7 @@ public class SoundBoard : MonoBehaviour
     }
 
     public void PlayCymbals(){
+        cymbalAudio.Stop();
         cymbalAudio.Play();
     }
 
@@ -117,6 +118,7 @@ public class SoundBoard : MonoBehaviour
     }
 
     public void PlayGong(){
+        gongAudio.Stop();
         gongAudio.Play();
     }
 
