@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter --version)",
+      "Read(//c/Users/Stephen/**)",
+      "Bash(flutter doctor:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(mkdir -p \"C:/Users/Stephen/Desktop/Github/Lion-Drum/flutter/assets/sounds\" \"C:/Users/Stephen/Desktop/Github/Lion-Drum/flutter/assets/images\")",
+      "Bash(cp \"C:/Users/Stephen/Desktop/Github/Lion-Drum/Assets/Sounds/drum.wav\" \"C:/Users/Stephen/Desktop/Github/Lion-Drum/flutter/assets/sounds/\")",
+      "Bash(cp \"C:/Users/Stephen/Desktop/Github/Lion-Drum/Assets/Sounds/side.wav\" \"C:/Users/Stephen/Desktop/Github/Lion-Drum/flutter/assets/sounds/\")",
+      "Bash(cp \"C:/Users/Stephen/Desktop/Github/Lion-Drum/Assets/Sounds/cymbal.wav\" \"C:/Users/Stephen/Desktop/Github/Lion-Drum/flutter/assets/sounds/\")",
+      "Bash(cp \"C:/Users/Stephen/Desktop/Github/Lion-Drum/Assets/Sounds/cymbal2.wav\" \"C:/Users/Stephen/Desktop/Github/Lion-Drum/flutter/assets/sounds/\")",
+      "Bash(grep -E \"^[^/]+/$\")",
+      "Bash(git mv *)",
+      "Bash(git add *)"
+    ]
+  }
+}
