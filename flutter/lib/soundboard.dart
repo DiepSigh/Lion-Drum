@@ -1,10 +1,11 @@
 import 'dart:typed_data';
 import 'package:flutter_soloud/flutter_soloud.dart';
+import 'saved_beat.dart';
 
 enum PlaybackState { idle, recording, replaying }
 
 class Soundboard {
-  static const int maxBeats = 3000;
+  static const int maxBeats = SavedBeatLimits.maxBeats;
 
   final _soloud = SoLoud.instance;
   late final AudioSource _drumSource;
@@ -30,6 +31,7 @@ class Soundboard {
 
   bool get recording => _state == PlaybackState.recording;
   bool get replaying => _state == PlaybackState.replaying;
+  int get beatCount => _lastCount;
 
   Future<void> init() async {
     await _soloud.init();
@@ -114,6 +116,8 @@ class Soundboard {
 
   void startRecording() {
     _count = 0;
+    _lastCount = 0;
+    hasRecording = false;
     _recordClock.reset();
     _recordClock.start();
     _state = PlaybackState.recording;
@@ -134,6 +138,28 @@ class Soundboard {
   void stopReplay() {
     _count = 0;
     _timestamp = 0.0;
+    _state = PlaybackState.idle;
+  }
+
+  DrumBeatRecording exportRecording() {
+    final times = List<double>.generate(_lastCount, (i) => _beatTimes[i]);
+    final types = List<int>.generate(_lastCount, (i) => _beatTypes[i]);
+    return DrumBeatRecording(beatTimes: times, beatTypes: types)..validate();
+  }
+
+  void loadRecording(DrumBeatRecording recording) {
+    recording.validate();
+    stopReplay();
+    _recordClock.stop();
+
+    _lastCount = recording.beatCount;
+    _count = 0;
+    _timestamp = 0.0;
+    for (var i = 0; i < recording.beatCount; i++) {
+      _beatTimes[i] = recording.beatTimes[i];
+      _beatTypes[i] = recording.beatTypes[i];
+    }
+    hasRecording = recording.beatCount > 0;
     _state = PlaybackState.idle;
   }
 

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'saved_beat.dart';
 import 'soundboard.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,6 +16,10 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final Soundboard _sb = Soundboard();
+  SavedBeatStore? _beatStore;
+  List<SavedBeat> _savedBeats = [];
+  String? _activeSavedBeatId;
+  bool _hasUnsavedRecording = false;
   bool _loading = true;
 
   // 0 = Drum, 1 = Cymbals, 2 = Gong
@@ -35,8 +40,24 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _ticker = createTicker(_onTick);
-    _sb.init().then((_) => setState(() => _loading = false));
+    _init();
     _loadAd();
+  }
+
+  Future<void> _init() async {
+    try {
+      await _sb.init();
+      _beatStore = await SavedBeatStore.create();
+      _savedBeats = await _beatStore!.loadAll();
+    } catch (_) {
+      if (mounted) {
+        _showSnack('Saved beats could not be loaded.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _loading = false);
+      }
+    }
   }
 
   void _loadAd() {
@@ -73,7 +94,10 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {
       if (_sb.recording) {
         _sb.stopRecording();
+        _hasUnsavedRecording = _sb.hasRecording;
       } else {
+        _activeSavedBeatId = null;
+        _hasUnsavedRecording = false;
         _sb.startRecording();
       }
     });
@@ -97,6 +121,7 @@ class _HomeScreenState extends State<HomeScreen>
     switch (_mode) {
       case 0:
         final stopped = _sb.tapDrum();
+        if (stopped) _hasUnsavedRecording = _sb.hasRecording;
         if (stopped || _sb.recording) setState(() {});
         break;
       case 1:
@@ -111,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen>
     switch (_mode) {
       case 0:
         final stopped = _sb.tapSide();
+        if (stopped) _hasUnsavedRecording = _sb.hasRecording;
         if (stopped || _sb.recording) setState(() {});
         break;
       case 1:
@@ -132,6 +158,361 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _showBeatsDialog() async {
+    if (_sb.recording || _sb.replaying || _beatStore == null) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        final size = MediaQuery.of(dialogContext).size;
+        final dialogWidth = min(size.width * 0.75, 420.0);
+        final dialogHeight = min(size.height * 0.6, 320.0);
+
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A0000),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: _gold, width: 2),
+          ),
+          title: const Text('Saved Beats', style: TextStyle(color: _gold)),
+          content: SizedBox(
+            width: dialogWidth,
+            height: dialogHeight,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _dialogButton(
+                        'Save Current',
+                        _sb.hasRecording
+                            ? () => _closeDialogThen(
+                                dialogContext,
+                                _saveCurrentBeat,
+                              )
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_savedBeats.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 18),
+                    child: Text(
+                      'No saved beats',
+                      style: TextStyle(color: Colors.white60),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          for (final beat in _savedBeats)
+                            _buildSavedBeatRow(beat, dialogContext),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close', style: TextStyle(color: _gold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _closeDialogThen(
+    BuildContext dialogContext,
+    Future<void> Function() action,
+  ) {
+    Navigator.of(dialogContext).pop();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        await action();
+      }
+    });
+  }
+
+  Widget _buildSavedBeatRow(SavedBeat beat, BuildContext dialogContext) {
+    final active = beat.id == _activeSavedBeatId;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: active ? _red.withAlpha(120) : Colors.black38,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: active ? _gold : _gold.withAlpha(120)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  beat.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '${beat.beatCount} beats - ${_formatDuration(beat.duration)}',
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          _smallDialogButton(
+            'Load',
+            () => _closeDialogThen(dialogContext, () => _loadBeat(beat)),
+          ),
+          const SizedBox(width: 6),
+          _smallDialogButton(
+            'Overwrite',
+            _sb.hasRecording
+                ? () => _closeDialogThen(
+                    dialogContext,
+                    () => _overwriteBeat(beat),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 6),
+          _smallDialogButton(
+            'Delete',
+            () => _closeDialogThen(dialogContext, () => _deleteBeat(beat)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveCurrentBeat() async {
+    final store = _beatStore;
+    if (store == null || !_sb.hasRecording) return;
+
+    final name = await _promptForName();
+    if (name == null) return;
+
+    final existing = store.findByName(_savedBeats, name);
+    if (existing != null) {
+      final replace = await _confirm(
+        'Replace Saved Beat?',
+        '"${existing.name}" already exists. Save over it?',
+      );
+      if (!replace) return;
+
+      final updated = await store.overwrite(
+        id: existing.id,
+        name: name,
+        recording: _sb.exportRecording(),
+      );
+      await _reloadSavedBeats();
+      setState(() {
+        _activeSavedBeatId = updated.id;
+        _hasUnsavedRecording = false;
+      });
+      _showSnack('Saved over "${updated.name}".');
+      return;
+    }
+
+    final saved = await store.saveNew(
+      name: name,
+      recording: _sb.exportRecording(),
+    );
+    await _reloadSavedBeats();
+    setState(() {
+      _activeSavedBeatId = saved.id;
+      _hasUnsavedRecording = false;
+    });
+    _showSnack('Saved "${saved.name}".');
+  }
+
+  Future<void> _loadBeat(SavedBeat beat) async {
+    if (_hasUnsavedRecording) {
+      final discard = await _confirm(
+        'Load Saved Beat?',
+        'Your current recording has not been saved. Load "${beat.name}" anyway?',
+      );
+      if (!discard) return;
+    }
+
+    setState(() {
+      _sb.loadRecording(beat.recording);
+      _activeSavedBeatId = beat.id;
+      _hasUnsavedRecording = false;
+    });
+    _showSnack('Loaded "${beat.name}".');
+  }
+
+  Future<void> _overwriteBeat(SavedBeat beat) async {
+    final store = _beatStore;
+    if (store == null || !_sb.hasRecording) return;
+
+    final replace = await _confirm(
+      'Overwrite Beat?',
+      'Save the current recording over "${beat.name}"?',
+    );
+    if (!replace) return;
+
+    final updated = await store.overwrite(
+      id: beat.id,
+      recording: _sb.exportRecording(),
+    );
+    await _reloadSavedBeats();
+    setState(() {
+      _activeSavedBeatId = updated.id;
+      _hasUnsavedRecording = false;
+    });
+    _showSnack('Saved over "${updated.name}".');
+  }
+
+  Future<void> _deleteBeat(SavedBeat beat) async {
+    final store = _beatStore;
+    if (store == null) return;
+
+    final delete = await _confirm(
+      'Delete Beat?',
+      'Delete "${beat.name}" from saved beats?',
+    );
+    if (!delete) return;
+
+    await store.delete(beat.id);
+    await _reloadSavedBeats();
+    setState(() {
+      if (_activeSavedBeatId == beat.id) {
+        _activeSavedBeatId = null;
+        _hasUnsavedRecording = _sb.hasRecording;
+      }
+    });
+    _showSnack('Deleted "${beat.name}".');
+  }
+
+  Future<void> _reloadSavedBeats() async {
+    final store = _beatStore;
+    if (store == null) return;
+    _savedBeats = await store.loadAll();
+  }
+
+  Future<String?> _promptForName() async {
+    final controller = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A0000),
+          title: const Text('Name Beat', style: TextStyle(color: _gold)),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLength: 40,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Beat name',
+              labelStyle: TextStyle(color: Colors.white70),
+            ),
+            onSubmitted: (_) {
+              final trimmed = controller.text.trim();
+              if (trimmed.isNotEmpty) Navigator.of(context).pop(trimmed);
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel', style: TextStyle(color: _gold)),
+            ),
+            TextButton(
+              onPressed: () {
+                final trimmed = controller.text.trim();
+                if (trimmed.isNotEmpty) Navigator.of(context).pop(trimmed);
+              },
+              child: const Text('Save', style: TextStyle(color: _gold)),
+            ),
+          ],
+        );
+      },
+    );
+    controller.dispose();
+    return name;
+  }
+
+  Future<bool> _confirm(String title, String message) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A0000),
+          title: Text(title, style: const TextStyle(color: _gold)),
+          content: Text(message, style: const TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel', style: TextStyle(color: _gold)),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm', style: TextStyle(color: _gold)),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
+  Widget _dialogButton(String label, VoidCallback? onTap) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: _gold,
+        disabledForegroundColor: Colors.white38,
+        side: BorderSide(color: onTap == null ? Colors.white24 : _gold),
+      ),
+      child: Text(label),
+    );
+  }
+
+  Widget _smallDialogButton(String label, VoidCallback? onTap) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: _gold,
+        disabledForegroundColor: Colors.white38,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        minimumSize: const Size(0, 32),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(label, style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+    );
+  }
+
+  String _formatDuration(double seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = (seconds % 60).toStringAsFixed(1).padLeft(4, '0');
+    return minutes > 0
+        ? '$minutes:$remainingSeconds'
+        : '${seconds.toStringAsFixed(1)}s';
+  }
+
   @override
   void dispose() {
     _ticker.dispose();
@@ -147,7 +528,9 @@ class _HomeScreenState extends State<HomeScreen>
     if (_loading) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Color(0xFFCC0000))),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFFCC0000)),
+        ),
       );
     }
 
@@ -157,12 +540,8 @@ class _HomeScreenState extends State<HomeScreen>
           Positioned.fill(
             child: Image.asset('assets/images/final.jpg', fit: BoxFit.cover),
           ),
-          Positioned.fill(
-            child: Container(color: Colors.black.withAlpha(120)),
-          ),
-          Positioned.fill(
-            child: _buildInstrumentArea(),
-          ),
+          Positioned.fill(child: Container(color: Colors.black.withAlpha(120))),
+          Positioned.fill(child: _buildInstrumentArea()),
           _buildTopBar(),
           if (_showAbout) _buildAboutOverlay(),
         ],
@@ -254,6 +633,13 @@ class _HomeScreenState extends State<HomeScreen>
                   modeNames[_mode],
                   _sb.recording ? null : _changeInstrument,
                 ),
+                if (isDrum) ...[
+                  const SizedBox(width: 8),
+                  _topButton(
+                    'Beats',
+                    (_sb.recording || _sb.replaying) ? null : _showBeatsDialog,
+                  ),
+                ],
               ],
             ),
           ),
@@ -300,7 +686,9 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? (activeColor ?? _dark) : (onTap != null ? _dark : Colors.black38),
+          color: active
+              ? (activeColor ?? _dark)
+              : (onTap != null ? _dark : Colors.black38),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: active ? (activeColor ?? _gold) : _gold.withAlpha(180),
@@ -310,7 +698,9 @@ class _HomeScreenState extends State<HomeScreen>
         child: Text(
           label,
           style: TextStyle(
-            color: active ? Colors.white : (onTap != null ? _gold : Colors.white38),
+            color: active
+                ? Colors.white
+                : (onTap != null ? _gold : Colors.white38),
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -354,7 +744,11 @@ class _HomeScreenState extends State<HomeScreen>
                 const Text(
                   'A lion dance percussion simulator.\nDrum, side drum, cymbals and gong.\nRecord and replay your beats.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.5),
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -365,7 +759,10 @@ class _HomeScreenState extends State<HomeScreen>
                 GestureDetector(
                   onTap: () => setState(() => _showAbout = false),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(color: _gold),
                       borderRadius: BorderRadius.circular(8),
