@@ -1,0 +1,119 @@
+{
+  "@@locale": "en",
+  "appTitle": "Lion Dance Kit",
+  "languageEnglish": "English",
+  "languageChinese": "中文",
+  "languageVietnamese": "Tiếng Việt",
+  "language": "Language",
+  "languageSaved": "Language set to {language}.",
+  "@languageSaved": {
+    "placeholders": {
+      "language": {}
+    }
+  },
+  "about": "About",
+  "menu": "Menu",
+  "drum": "Drum",
+  "cymbals": "Cymbals",
+  "gong": "Gong",
+  "beats": "Beats",
+  "record": "Record",
+  "recording": "Recording",
+  "play": "Play",
+  "playing": "Playing",
+  "savedBeats": "Saved Beats",
+  "saveCurrent": "Save Current",
+  "filterBy": "Filter by",
+  "filterName": "Name",
+  "filterDate": "Date",
+  "filterDuration": "Duration",
+  "noSavedBeats": "No saved beats",
+  "close": "Close",
+  "load": "Load",
+  "overwrite": "Overwrite",
+  "delete": "Delete",
+  "beatMetadata": "{count, plural, =1{1 beat} other{{count} beats}} - {duration}",
+  "@beatMetadata": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "duration": {}
+    }
+  },
+  "secondsDuration": "{seconds}s",
+  "@secondsDuration": {
+    "placeholders": {
+      "seconds": {}
+    }
+  },
+  "minutesDuration": "{minutes}:{seconds}",
+  "@minutesDuration": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      },
+      "seconds": {}
+    }
+  },
+  "nameBeat": "Name Beat",
+  "beatName": "Beat name",
+  "cancel": "Cancel",
+  "save": "Save",
+  "confirm": "Confirm",
+  "replaceSavedBeatTitle": "Replace Saved Beat?",
+  "replaceSavedBeatMessage": "\"{name}\" already exists. Save over it?",
+  "@replaceSavedBeatMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "savedOverBeat": "Saved over \"{name}\".",
+  "@savedOverBeat": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "savedBeat": "Saved \"{name}\".",
+  "@savedBeat": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "loadSavedBeatTitle": "Load Saved Beat?",
+  "loadSavedBeatMessage": "Your current recording has not been saved. Load \"{name}\" anyway?",
+  "@loadSavedBeatMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "loadedBeat": "Loaded \"{name}\".",
+  "@loadedBeat": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "overwriteBeatTitle": "Overwrite Beat?",
+  "overwriteBeatMessage": "Save the current recording over \"{name}\"?",
+  "@overwriteBeatMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deleteBeatTitle": "Delete Beat?",
+  "deleteBeatMessage": "Delete \"{name}\" from saved beats?",
+  "@deleteBeatMessage": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "deletedBeat": "Deleted \"{name}\".",
+  "@deletedBeat": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "savedBeatsLoadError": "Saved beats could not be loaded.",
+  "aboutDescription": "A lion dance percussion simulator.\nDrum, side drum, cymbals and gong.\nRecord and replay your beats.",
+  "copyright": "© DiepSigh"
+}

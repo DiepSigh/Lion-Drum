@@ -3,11 +3,21 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'l10n/app_localizations.dart';
 import 'saved_beat.dart';
 import 'soundboard.dart';
 
+enum _SavedBeatFilter { name, date, duration }
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    required this.locale,
+    required this.onLocaleChanged,
+    super.key,
+  });
+
+  final Locale locale;
+  final Future<void> Function(Locale locale) onLocaleChanged;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -19,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen>
   SavedBeatStore? _beatStore;
   List<SavedBeat> _savedBeats = [];
   String? _activeSavedBeatId;
+  _SavedBeatFilter _savedBeatFilter = _SavedBeatFilter.name;
   bool _hasUnsavedRecording = false;
   bool _loading = true;
 
@@ -36,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen>
   static const _gold = Color(0xFFFFD700);
   static const _dark = Color(0xCC000000);
 
+  AppLocalizations get _l10n => AppLocalizations.of(context);
+
   @override
   void initState() {
     super.initState();
@@ -51,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
       _savedBeats = await _beatStore!.loadAll();
     } catch (_) {
       if (mounted) {
-        _showSnack('Saved beats could not be loaded.');
+        _showSnack(_l10n.savedBeatsLoadError);
       }
     } finally {
       if (mounted) {
@@ -158,8 +171,140 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _showLanguageDialog() async {
+    final l10n = _l10n;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A0000),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: _gold, width: 2),
+          ),
+          title: Text(l10n.language, style: const TextStyle(color: _gold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _languageOption(
+                dialogContext,
+                const Locale('en'),
+                '🇺🇸 ${l10n.languageEnglish}',
+                l10n.languageEnglish,
+              ),
+              const SizedBox(height: 8),
+              _languageOption(
+                dialogContext,
+                const Locale('zh'),
+                '🇨🇳 ${l10n.languageChinese}',
+                l10n.languageChinese,
+              ),
+              const SizedBox(height: 8),
+              _languageOption(
+                dialogContext,
+                const Locale('vi'),
+                '🇻🇳 ${l10n.languageVietnamese}',
+                l10n.languageVietnamese,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.close, style: const TextStyle(color: _gold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _languageOption(
+    BuildContext dialogContext,
+    Locale locale,
+    String label,
+    String languageName,
+  ) {
+    final selected = widget.locale.languageCode == locale.languageCode;
+    return SizedBox(
+      width: double.infinity,
+      child: _dialogButton(
+        label,
+        selected
+            ? null
+            : () => _selectLanguage(dialogContext, locale, languageName),
+      ),
+    );
+  }
+
+  Future<void> _selectLanguage(
+    BuildContext dialogContext,
+    Locale locale,
+    String languageName,
+  ) async {
+    Navigator.of(dialogContext).pop();
+    await widget.onLocaleChanged(locale);
+    if (mounted) {
+      _showSnack(_l10n.languageSaved(languageName));
+    }
+  }
+
+  Future<void> _showMainMenu() async {
+    final l10n = _l10n;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A0000),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: _gold, width: 2),
+          ),
+          title: Text(l10n.menu, style: const TextStyle(color: _gold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: _dialogButton(l10n.about, () {
+                  Navigator.of(dialogContext).pop();
+                  setState(() => _showAbout = true);
+                }),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: _dialogButton(
+                  l10n.language,
+                  () => _closeDialogThen(dialogContext, _showLanguageDialog),
+                ),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: _dialogButton(
+                  l10n.savedBeats,
+                  (_mode == 0 && !_sb.recording && !_sb.replaying)
+                      ? () => _closeDialogThen(dialogContext, _showBeatsDialog)
+                      : null,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(l10n.close, style: const TextStyle(color: _gold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _showBeatsDialog() async {
     if (_sb.recording || _sb.replaying || _beatStore == null) return;
+    final l10n = _l10n;
 
     await showDialog<void>(
       context: context,
@@ -168,65 +313,152 @@ class _HomeScreenState extends State<HomeScreen>
         final dialogWidth = min(size.width * 0.75, 420.0);
         final dialogHeight = min(size.height * 0.6, 320.0);
 
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A0000),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: _gold, width: 2),
-          ),
-          title: const Text('Saved Beats', style: TextStyle(color: _gold)),
-          content: SizedBox(
-            width: dialogWidth,
-            height: dialogHeight,
-            child: Column(
-              children: [
-                Row(
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            final sortedBeats = _sortedSavedBeats();
+
+            return AlertDialog(
+              backgroundColor: const Color(0xFF1A0000),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: const BorderSide(color: _gold, width: 2),
+              ),
+              title: Text(
+                l10n.savedBeats,
+                style: const TextStyle(color: _gold),
+              ),
+              content: SizedBox(
+                width: dialogWidth,
+                height: dialogHeight,
+                child: Column(
                   children: [
-                    Expanded(
-                      child: _dialogButton(
-                        'Save Current',
-                        _sb.hasRecording
-                            ? () => _closeDialogThen(
-                                dialogContext,
-                                _saveCurrentBeat,
-                              )
-                            : null,
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _dialogButton(
+                            l10n.saveCurrent,
+                            _sb.hasRecording
+                                ? () => _closeDialogThen(
+                                    dialogContext,
+                                    _saveCurrentBeat,
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 10),
+                    _buildSavedBeatFilter(dialogSetState),
+                    const SizedBox(height: 10),
+                    if (_savedBeats.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        child: Text(
+                          l10n.noSavedBeats,
+                          style: const TextStyle(color: Colors.white60),
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              for (final beat in sortedBeats)
+                                _buildSavedBeatRow(beat, dialogContext),
+                            ],
+                          ),
+                        ),
+                      ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                if (_savedBeats.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 18),
-                    child: Text(
-                      'No saved beats',
-                      style: TextStyle(color: Colors.white60),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          for (final beat in _savedBeats)
-                            _buildSavedBeatRow(beat, dialogContext),
-                        ],
-                      ),
-                    ),
-                  ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text(l10n.close, style: const TextStyle(color: _gold)),
+                ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Close', style: TextStyle(color: _gold)),
-            ),
-          ],
+            );
+          },
         );
       },
     );
+  }
+
+  Widget _buildSavedBeatFilter(StateSetter dialogSetState) {
+    final l10n = _l10n;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _gold.withAlpha(120)),
+      ),
+      child: Row(
+        children: [
+          Text(
+            l10n.filterBy,
+            style: const TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+          const Spacer(),
+          DropdownButtonHideUnderline(
+            child: DropdownButton<_SavedBeatFilter>(
+              value: _savedBeatFilter,
+              dropdownColor: const Color(0xFF1A0000),
+              iconEnabledColor: _gold,
+              style: const TextStyle(color: _gold, fontWeight: FontWeight.w600),
+              items: [
+                for (final filter in _SavedBeatFilter.values)
+                  DropdownMenuItem(
+                    value: filter,
+                    child: Text(_savedBeatFilterLabel(filter)),
+                  ),
+              ],
+              onChanged: (filter) {
+                if (filter == null) return;
+                setState(() => _savedBeatFilter = filter);
+                dialogSetState(() {});
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _savedBeatFilterLabel(_SavedBeatFilter filter) {
+    final l10n = _l10n;
+    switch (filter) {
+      case _SavedBeatFilter.name:
+        return l10n.filterName;
+      case _SavedBeatFilter.date:
+        return l10n.filterDate;
+      case _SavedBeatFilter.duration:
+        return l10n.filterDuration;
+    }
+  }
+
+  List<SavedBeat> _sortedSavedBeats() {
+    final beats = List<SavedBeat>.of(_savedBeats);
+    switch (_savedBeatFilter) {
+      case _SavedBeatFilter.name:
+        beats.sort((a, b) {
+          final byName = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          if (byName != 0) return byName;
+          return b.updatedAt.compareTo(a.updatedAt);
+        });
+        return beats;
+      case _SavedBeatFilter.date:
+        beats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        return beats;
+      case _SavedBeatFilter.duration:
+        beats.sort((a, b) {
+          final byDuration = b.duration.compareTo(a.duration);
+          if (byDuration != 0) return byDuration;
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+        return beats;
+    }
   }
 
   void _closeDialogThen(
@@ -243,6 +475,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildSavedBeatRow(SavedBeat beat, BuildContext dialogContext) {
     final active = beat.id == _activeSavedBeatId;
+    final l10n = _l10n;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
@@ -268,7 +501,10 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${beat.beatCount} beats - ${_formatDuration(beat.duration)}',
+                  l10n.beatMetadata(
+                    beat.beatCount,
+                    _formatDuration(beat.duration),
+                  ),
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
@@ -276,12 +512,12 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(width: 8),
           _smallDialogButton(
-            'Load',
+            l10n.load,
             () => _closeDialogThen(dialogContext, () => _loadBeat(beat)),
           ),
           const SizedBox(width: 6),
           _smallDialogButton(
-            'Overwrite',
+            l10n.overwrite,
             _sb.hasRecording
                 ? () => _closeDialogThen(
                     dialogContext,
@@ -291,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           const SizedBox(width: 6),
           _smallDialogButton(
-            'Delete',
+            l10n.delete,
             () => _closeDialogThen(dialogContext, () => _deleteBeat(beat)),
           ),
         ],
@@ -302,6 +538,7 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _saveCurrentBeat() async {
     final store = _beatStore;
     if (store == null || !_sb.hasRecording) return;
+    final l10n = _l10n;
 
     final name = await _promptForName();
     if (name == null) return;
@@ -309,8 +546,8 @@ class _HomeScreenState extends State<HomeScreen>
     final existing = store.findByName(_savedBeats, name);
     if (existing != null) {
       final replace = await _confirm(
-        'Replace Saved Beat?',
-        '"${existing.name}" already exists. Save over it?',
+        l10n.replaceSavedBeatTitle,
+        l10n.replaceSavedBeatMessage(existing.name),
       );
       if (!replace) return;
 
@@ -324,7 +561,7 @@ class _HomeScreenState extends State<HomeScreen>
         _activeSavedBeatId = updated.id;
         _hasUnsavedRecording = false;
       });
-      _showSnack('Saved over "${updated.name}".');
+      _showSnack(l10n.savedOverBeat(updated.name));
       return;
     }
 
@@ -337,14 +574,15 @@ class _HomeScreenState extends State<HomeScreen>
       _activeSavedBeatId = saved.id;
       _hasUnsavedRecording = false;
     });
-    _showSnack('Saved "${saved.name}".');
+    _showSnack(l10n.savedBeat(saved.name));
   }
 
   Future<void> _loadBeat(SavedBeat beat) async {
+    final l10n = _l10n;
     if (_hasUnsavedRecording) {
       final discard = await _confirm(
-        'Load Saved Beat?',
-        'Your current recording has not been saved. Load "${beat.name}" anyway?',
+        l10n.loadSavedBeatTitle,
+        l10n.loadSavedBeatMessage(beat.name),
       );
       if (!discard) return;
     }
@@ -354,16 +592,17 @@ class _HomeScreenState extends State<HomeScreen>
       _activeSavedBeatId = beat.id;
       _hasUnsavedRecording = false;
     });
-    _showSnack('Loaded "${beat.name}".');
+    _showSnack(l10n.loadedBeat(beat.name));
   }
 
   Future<void> _overwriteBeat(SavedBeat beat) async {
     final store = _beatStore;
     if (store == null || !_sb.hasRecording) return;
+    final l10n = _l10n;
 
     final replace = await _confirm(
-      'Overwrite Beat?',
-      'Save the current recording over "${beat.name}"?',
+      l10n.overwriteBeatTitle,
+      l10n.overwriteBeatMessage(beat.name),
     );
     if (!replace) return;
 
@@ -376,16 +615,17 @@ class _HomeScreenState extends State<HomeScreen>
       _activeSavedBeatId = updated.id;
       _hasUnsavedRecording = false;
     });
-    _showSnack('Saved over "${updated.name}".');
+    _showSnack(l10n.savedOverBeat(updated.name));
   }
 
   Future<void> _deleteBeat(SavedBeat beat) async {
     final store = _beatStore;
     if (store == null) return;
+    final l10n = _l10n;
 
     final delete = await _confirm(
-      'Delete Beat?',
-      'Delete "${beat.name}" from saved beats?',
+      l10n.deleteBeatTitle,
+      l10n.deleteBeatMessage(beat.name),
     );
     if (!delete) return;
 
@@ -397,7 +637,7 @@ class _HomeScreenState extends State<HomeScreen>
         _hasUnsavedRecording = _sb.hasRecording;
       }
     });
-    _showSnack('Deleted "${beat.name}".');
+    _showSnack(l10n.deletedBeat(beat.name));
   }
 
   Future<void> _reloadSavedBeats() async {
@@ -408,20 +648,21 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<String?> _promptForName() async {
     final controller = TextEditingController();
+    final l10n = _l10n;
     final name = await showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF1A0000),
-          title: const Text('Name Beat', style: TextStyle(color: _gold)),
+          title: Text(l10n.nameBeat, style: const TextStyle(color: _gold)),
           content: TextField(
             controller: controller,
             autofocus: true,
             maxLength: 40,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Beat name',
-              labelStyle: TextStyle(color: Colors.white70),
+            decoration: InputDecoration(
+              labelText: l10n.beatName,
+              labelStyle: const TextStyle(color: Colors.white70),
             ),
             onSubmitted: (_) {
               final trimmed = controller.text.trim();
@@ -431,14 +672,14 @@ class _HomeScreenState extends State<HomeScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel', style: TextStyle(color: _gold)),
+              child: Text(l10n.cancel, style: const TextStyle(color: _gold)),
             ),
             TextButton(
               onPressed: () {
                 final trimmed = controller.text.trim();
                 if (trimmed.isNotEmpty) Navigator.of(context).pop(trimmed);
               },
-              child: const Text('Save', style: TextStyle(color: _gold)),
+              child: Text(l10n.save, style: const TextStyle(color: _gold)),
             ),
           ],
         );
@@ -449,6 +690,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<bool> _confirm(String title, String message) async {
+    final l10n = _l10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -459,11 +701,11 @@ class _HomeScreenState extends State<HomeScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel', style: TextStyle(color: _gold)),
+              child: Text(l10n.cancel, style: const TextStyle(color: _gold)),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Confirm', style: TextStyle(color: _gold)),
+              child: Text(l10n.confirm, style: const TextStyle(color: _gold)),
             ),
           ],
         );
@@ -506,11 +748,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   String _formatDuration(double seconds) {
+    final l10n = _l10n;
     final minutes = seconds ~/ 60;
     final remainingSeconds = (seconds % 60).toStringAsFixed(1).padLeft(4, '0');
     return minutes > 0
-        ? '$minutes:$remainingSeconds'
-        : '${seconds.toStringAsFixed(1)}s';
+        ? l10n.minutesDuration(minutes, remainingSeconds)
+        : l10n.secondsDuration(seconds.toStringAsFixed(1));
   }
 
   @override
@@ -605,7 +848,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildTopBar() {
-    final modeNames = ['Drum', 'Cymbals', 'Gong'];
+    final l10n = _l10n;
+    final modeNames = [l10n.drum, l10n.cymbals, l10n.gong];
     final isDrum = _mode == 0;
     return Stack(
       children: [
@@ -627,19 +871,12 @@ class _HomeScreenState extends State<HomeScreen>
             padding: const EdgeInsets.fromLTRB(24, 12, 8, 8),
             child: Row(
               children: [
-                _topButton('About', () => setState(() => _showAbout = true)),
+                _topButton(l10n.menu, _showMainMenu),
                 const SizedBox(width: 8),
                 _topButton(
                   modeNames[_mode],
                   _sb.recording ? null : _changeInstrument,
                 ),
-                if (isDrum) ...[
-                  const SizedBox(width: 8),
-                  _topButton(
-                    'Beats',
-                    (_sb.recording || _sb.replaying) ? null : _showBeatsDialog,
-                  ),
-                ],
               ],
             ),
           ),
@@ -653,7 +890,7 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 if (isDrum && !_sb.replaying)
                   _topButton(
-                    _sb.recording ? 'Recording' : 'Record',
+                    _sb.recording ? l10n.recording : l10n.record,
                     _toggleRecord,
                     active: _sb.recording,
                     activeColor: _red,
@@ -661,7 +898,7 @@ class _HomeScreenState extends State<HomeScreen>
                 if (_sb.hasRecording && !_sb.recording) ...[
                   if (isDrum && !_sb.replaying) const SizedBox(height: 8),
                   _topButton(
-                    _sb.replaying ? 'Playing' : 'Play',
+                    _sb.replaying ? l10n.playing : l10n.play,
                     _toggleReplay,
                     active: _sb.replaying,
                     activeColor: const Color(0xFF006600),
@@ -709,6 +946,7 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildAboutOverlay() {
+    final l10n = _l10n;
     return GestureDetector(
       onTap: () => setState(() => _showAbout = false),
       child: Container(
@@ -727,9 +965,9 @@ class _HomeScreenState extends State<HomeScreen>
               children: [
                 Image.asset('assets/images/LionIcon.png', height: 64),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Lion Dance Kit',
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: _gold,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -741,19 +979,19 @@ class _HomeScreenState extends State<HomeScreen>
                   style: TextStyle(color: Colors.white54, fontSize: 14),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'A lion dance percussion simulator.\nDrum, side drum, cymbals and gong.\nRecord and replay your beats.',
+                Text(
+                  l10n.aboutDescription,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white70,
                     fontSize: 14,
                     height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  '© DiepSigh',
-                  style: TextStyle(color: Colors.white38, fontSize: 12),
+                Text(
+                  l10n.copyright,
+                  style: const TextStyle(color: Colors.white38, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 GestureDetector(
@@ -767,7 +1005,10 @@ class _HomeScreenState extends State<HomeScreen>
                       border: Border.all(color: _gold),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text('Close', style: TextStyle(color: _gold)),
+                    child: Text(
+                      l10n.close,
+                      style: const TextStyle(color: _gold),
+                    ),
                   ),
                 ),
               ],
