@@ -280,15 +280,6 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: _dialogButton(
-                  l10n.savedBeats,
-                  (_mode == 0 && !_sb.recording && !_sb.replaying)
-                      ? () => _closeDialogThen(dialogContext, _showBeatsDialog)
-                      : null,
-                ),
-              ),
             ],
           ),
           actions: [
@@ -903,6 +894,12 @@ class _HomeScreenState extends State<HomeScreen>
                     active: _sb.replaying,
                     activeColor: const Color(0xFF006600),
                   ),
+                  if (isDrum && !_sb.replaying) ...[
+                    const SizedBox(height: 8),
+                    _topButton(l10n.save, _saveCurrentBeat),
+                    const SizedBox(height: 8),
+                    _topButton(l10n.load, _showBeatsDialog),
+                  ],
                 ],
               ],
             ),
@@ -975,7 +972,7 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'v0.9',
+                  'v1.1',
                   style: TextStyle(color: Colors.white54, fontSize: 14),
                 ),
                 const SizedBox(height: 12),
