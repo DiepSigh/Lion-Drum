@@ -4,14 +4,30 @@ import 'saved_beat.dart';
 
 enum PlaybackState { idle, recording, replaying }
 
+enum DrumSound {
+  original('assets/sounds/drum.wav'),
+  deep('assets/sounds/drum_deep.wav'),
+  warm('assets/sounds/drum_warm.wav'),
+  tight('assets/sounds/drum_tight.wav');
+
+  const DrumSound(this.asset);
+
+  final String asset;
+}
+
 class Soundboard {
   static const int maxBeats = SavedBeatLimits.maxBeats;
 
   final _soloud = SoLoud.instance;
-  late final AudioSource _drumSource;
-  late final AudioSource _sideSource;
-  late final AudioSource _cymbalSource;
-  late final AudioSource _gongSource;
+  Future<void>? _initialization;
+  Future<void>? _disposal;
+  bool _disposed = false;
+  final Map<DrumSound, AudioSource> _drumSources = {};
+  DrumSound drumSound = DrumSound.original;
+  AudioSource get _drumSource => _drumSources[drumSound]!;
+  late AudioSource _sideSource;
+  late AudioSource _cymbalSource;
+  late AudioSource _gongSource;
 
   final List<SoundHandle> _cymbalHandles = [];
   final List<SoundHandle> _gongHandles = [];
@@ -32,18 +48,42 @@ class Soundboard {
   bool get recording => _state == PlaybackState.recording;
   bool get replaying => _state == PlaybackState.replaying;
   int get beatCount => _lastCount;
+  int get currentBeatCount =>
+      recording ? _count : (hasRecording ? _lastCount : 0);
+  double get elapsedSeconds => recording ? _recordTime : _timestamp;
+  double get recordingDuration =>
+      hasRecording && _lastCount > 0 ? _beatTimes[_lastCount - 1] : 0;
 
-  Future<void> init() async {
-    await _soloud.init();
-    _drumSource = await _soloud.loadAsset('assets/sounds/drum.wav');
-    _sideSource = await _soloud.loadAsset('assets/sounds/side.wav');
-    _cymbalSource = await _soloud.loadAsset('assets/sounds/cymbal.wav');
-    _gongSource = await _soloud.loadAsset('assets/sounds/gong2.wav');
+  Future<void> init() {
+    if (_disposed) throw StateError('Soundboard has been disposed.');
+    return _initialization = _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      await _soloud.init();
+      if (_disposed) return;
+      _drumSources.clear();
+      for (final sound in DrumSound.values) {
+        _drumSources[sound] = await _soloud.loadAsset(sound.asset);
+        if (_disposed) return;
+      }
+      if (_disposed) return;
+      _sideSource = await _soloud.loadAsset('assets/sounds/side.wav');
+      if (_disposed) return;
+      _cymbalSource = await _soloud.loadAsset('assets/sounds/cymbal.wav');
+      if (_disposed) return;
+      _gongSource = await _soloud.loadAsset('assets/sounds/gong2.wav');
+    } catch (_) {
+      // Also clean up partial loads before a user retries initialization.
+      await _soloud.deinitAsync();
+      rethrow;
+    }
   }
 
   /// Call each frame during replay with delta time in seconds.
   /// Returns true when replay finishes.
-  bool update(double dt) {
+  bool update(double dt, {void Function(int type)? onBeat}) {
     _timestamp += dt;
     // Drain every beat whose time has passed this frame — prevents one-per-frame lag on fast rolls.
     while (_count < _lastCount && _timestamp >= _beatTimes[_count]) {
@@ -52,6 +92,7 @@ class Soundboard {
       } else {
         _soloud.play(_sideSource);
       }
+      onBeat?.call(_beatTypes[_count]);
       if (_count + 1 == _lastCount) {
         stopReplay();
         return true;
@@ -163,11 +204,24 @@ class Soundboard {
     _state = PlaybackState.idle;
   }
 
-  void dispose() {
-    _soloud.disposeSource(_drumSource);
-    _soloud.disposeSource(_sideSource);
-    _soloud.disposeSource(_cymbalSource);
-    _soloud.disposeSource(_gongSource);
-    _soloud.deinit();
+  Future<void> dispose() {
+    _disposed = true;
+    _recordClock.stop();
+    _state = PlaybackState.idle;
+    return _disposal ??= _shutdown();
+  }
+
+  Future<void> _shutdown() async {
+    try {
+      // Native callbacks must stay alive until any in-flight loading finishes.
+      await _initialization;
+    } catch (_) {
+      // Initialization already cleaned up its partially loaded resources.
+    }
+    // The engine owns all sources. Its asynchronous shutdown stops native
+    // threads before closing callbacks, without blocking the main thread.
+    await _soloud.deinitAsync();
+    _cymbalHandles.clear();
+    _gongHandles.clear();
   }
 }

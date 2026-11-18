@@ -35,7 +35,55 @@ class AppLocalizationsZh extends AppLocalizations {
   String get menu => '菜单';
 
   @override
+  String get instrument => '乐器';
+
+  @override
+  String get switchInstrument => '切换乐器';
+
+  @override
+  String get side => '鼓边';
+
+  @override
+  String get mute => '止音';
+
+  @override
+  String get stop => '停止';
+
+  @override
+  String get stopRecording => '停止录制';
+
+  @override
+  String get stopPlayback => '停止播放';
+
+  @override
+  String get library => '鼓点库';
+
+  @override
+  String get ready => '就绪';
+
+  @override
+  String get unsavedBeat => '未保存的鼓点';
+
+  @override
   String get drum => '鼓';
+
+  @override
+  String get drumSound => '鼓声';
+
+  @override
+  String get drumSoundHint => '点击鼓声以选择并试听。';
+
+  @override
+  String get drumOriginal => '原声';
+
+  @override
+  String get drumDeep => '低沉';
+
+  @override
+  String get drumWarm => '温暖';
+
+  @override
+  String get drumTight => '紧实';
 
   @override
   String get cymbals => '钹';
@@ -175,6 +223,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get savedBeatsLoadError => '无法加载已保存鼓点。';
+
+  @override
+  String get audioLoadError => '无法启动音频。请重试。';
+
+  @override
+  String get retry => '重试';
 
   @override
   String get aboutDescription => '舞狮打击乐模拟器。\n鼓、边鼓、钹和锣。\n录制并回放你的鼓点。';

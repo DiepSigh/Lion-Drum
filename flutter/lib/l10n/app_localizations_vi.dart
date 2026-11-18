@@ -35,7 +35,55 @@ class AppLocalizationsVi extends AppLocalizations {
   String get menu => 'Menu';
 
   @override
+  String get instrument => 'Nhạc cụ';
+
+  @override
+  String get switchInstrument => 'Đổi nhạc cụ';
+
+  @override
+  String get side => 'Thành trống';
+
+  @override
+  String get mute => 'Ngắt tiếng';
+
+  @override
+  String get stop => 'Dừng';
+
+  @override
+  String get stopRecording => 'Dừng thu';
+
+  @override
+  String get stopPlayback => 'Dừng phát';
+
+  @override
+  String get library => 'Thư viện';
+
+  @override
+  String get ready => 'Sẵn sàng';
+
+  @override
+  String get unsavedBeat => 'Nhịp chưa lưu';
+
+  @override
   String get drum => 'Trống';
+
+  @override
+  String get drumSound => 'Âm trống';
+
+  @override
+  String get drumSoundHint => 'Chạm vào âm trống để chọn và nghe thử.';
+
+  @override
+  String get drumOriginal => 'Gốc';
+
+  @override
+  String get drumDeep => 'Trầm';
+
+  @override
+  String get drumWarm => 'Ấm';
+
+  @override
+  String get drumTight => 'Gọn';
 
   @override
   String get cymbals => 'Chập chõa';
@@ -175,6 +223,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get savedBeatsLoadError => 'Không thể tải nhịp đã lưu.';
+
+  @override
+  String get audioLoadError =>
+      'Không thể khởi động âm thanh. Vui lòng thử lại.';
+
+  @override
+  String get retry => 'Thử lại';
 
   @override
   String get aboutDescription =>

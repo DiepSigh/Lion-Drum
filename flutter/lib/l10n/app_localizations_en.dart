@@ -35,7 +35,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menu => 'Menu';
 
   @override
+  String get instrument => 'Instrument';
+
+  @override
+  String get switchInstrument => 'Switch instrument';
+
+  @override
+  String get side => 'Side';
+
+  @override
+  String get mute => 'Mute';
+
+  @override
+  String get stop => 'Stop';
+
+  @override
+  String get stopRecording => 'Stop recording';
+
+  @override
+  String get stopPlayback => 'Stop playback';
+
+  @override
+  String get library => 'Library';
+
+  @override
+  String get ready => 'Ready';
+
+  @override
+  String get unsavedBeat => 'Unsaved beat';
+
+  @override
   String get drum => 'Drum';
+
+  @override
+  String get drumSound => 'Sound';
+
+  @override
+  String get drumSoundHint => 'Tap a sound to select and preview it.';
+
+  @override
+  String get drumOriginal => 'Original';
+
+  @override
+  String get drumDeep => 'Deep';
+
+  @override
+  String get drumWarm => 'Warm';
+
+  @override
+  String get drumTight => 'Tight';
 
   @override
   String get cymbals => 'Cymbals';
@@ -181,6 +229,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get savedBeatsLoadError => 'Saved beats could not be loaded.';
+
+  @override
+  String get audioLoadError => 'Audio could not be started. Please try again.';
+
+  @override
+  String get retry => 'Try Again';
 
   @override
   String get aboutDescription =>

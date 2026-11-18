@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SavedBeatLimits {
   static const int maxBeats = 3000;
@@ -138,11 +140,18 @@ class SavedBeat {
 }
 
 class SavedBeatStore {
-  SavedBeatStore._(this._file);
+  SavedBeatStore._(this._file) : _preferences = null;
 
-  final File _file;
+  SavedBeatStore._browser(this._preferences) : _file = null;
+
+  final File? _file;
+  final SharedPreferences? _preferences;
+  static const _browserStorageKey = 'drum_beats_v1';
 
   static Future<SavedBeatStore> create() async {
+    if (kIsWeb) {
+      return SavedBeatStore._browser(await SharedPreferences.getInstance());
+    }
     final directory = await getApplicationDocumentsDirectory();
     return SavedBeatStore._(File('${directory.path}/drum_beats_v1.json'));
   }
@@ -150,11 +159,18 @@ class SavedBeatStore {
   static SavedBeatStore forFile(File file) => SavedBeatStore._(file);
 
   Future<List<SavedBeat>> loadAll() async {
-    if (!await _file.exists()) {
-      return [];
+    final String contents;
+    if (_preferences != null) {
+      await _preferences.reload();
+      contents = _preferences.getString(_browserStorageKey) ?? '';
+    } else {
+      final file = _file!;
+      if (!await file.exists()) {
+        return [];
+      }
+      contents = await file.readAsString();
     }
 
-    final contents = await _file.readAsString();
     if (contents.trim().isEmpty) {
       return [];
     }
@@ -245,13 +261,19 @@ class SavedBeatStore {
   }
 
   Future<void> _writeAll(List<SavedBeat> beats) async {
-    await _file.parent.create(recursive: true);
     beats.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
     final encoded = const JsonEncoder.withIndent('  ').convert({
       'version': 1,
       'beats': beats.map((beat) => beat.toJson()).toList(),
     });
-    await _file.writeAsString(encoded);
+    if (_preferences != null) {
+      final saved = await _preferences.setString(_browserStorageKey, encoded);
+      if (!saved) throw StateError('Could not save beats to browser storage.');
+    } else {
+      final file = _file!;
+      await file.parent.create(recursive: true);
+      await file.writeAsString(encoded);
+    }
   }
 
   static bool _sameName(String a, String b) =>

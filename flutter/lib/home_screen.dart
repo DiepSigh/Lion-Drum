@@ -1,9 +1,12 @@
-import 'dart:io';
+import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'l10n/app_localizations.dart';
+import 'instrument_surface.dart';
+import 'performance_controls.dart';
 import 'saved_beat.dart';
 import 'soundboard.dart';
 
@@ -32,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen>
   _SavedBeatFilter _savedBeatFilter = _SavedBeatFilter.name;
   bool _hasUnsavedRecording = false;
   bool _loading = true;
+  bool _audioFailed = false;
 
   // 0 = Drum, 1 = Cymbals, 2 = Gong
   int _mode = 0;
@@ -39,13 +43,14 @@ class _HomeScreenState extends State<HomeScreen>
 
   late Ticker _ticker;
   Duration _lastTick = Duration.zero;
+  Duration _lastStatusTick = Duration.zero;
+  final ValueNotifier<int> _strikes = ValueNotifier(0);
 
   BannerAd? _bannerAd;
   bool _bannerLoaded = false;
 
   static const _red = Color(0xFFCC0000);
-  static const _gold = Color(0xFFFFD700);
-  static const _dark = Color(0xCC000000);
+  static const _gold = Color(0xFFD7B675);
 
   AppLocalizations get _l10n => AppLocalizations.of(context);
 
@@ -53,13 +58,29 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _ticker = createTicker(_onTick);
-    _init();
-    _loadAd();
+    // Let the loading screen draw before starting native audio and ad work.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(_init());
+      unawaited(_initializeAds());
+    });
   }
 
   Future<void> _init() async {
     try {
       await _sb.init();
+    } catch (error, stack) {
+      debugPrint('Audio initialization failed: $error\n$stack');
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _audioFailed = true;
+        });
+      }
+      return;
+    }
+    if (!mounted) return;
+    try {
       _beatStore = await SavedBeatStore.create();
       _savedBeats = await _beatStore!.loadAll();
     } catch (_) {
@@ -73,15 +94,35 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Future<void> _initializeAds() async {
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.android &&
+            defaultTargetPlatform != TargetPlatform.iOS)) {
+      return;
+    }
+    try {
+      await MobileAds.instance.initialize();
+      if (mounted) _loadAd();
+    } catch (error, stack) {
+      debugPrint('Ad initialization failed: $error\n$stack');
+    }
+  }
+
   void _loadAd() {
     _bannerAd = BannerAd(
-      adUnitId: Platform.isAndroid
+      adUnitId: defaultTargetPlatform == TargetPlatform.android
           ? 'ca-app-pub-7760662598407173/2927518920'
           : 'ca-app-pub-3940256099942544/2934735716',
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => setState(() => _bannerLoaded = true),
+        onAdLoaded: (ad) {
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
+          setState(() => _bannerLoaded = true);
+        },
         onAdFailedToLoad: (ad, _) => ad.dispose(),
       ),
     )..load();
@@ -90,28 +131,123 @@ class _HomeScreenState extends State<HomeScreen>
   void _onTick(Duration elapsed) {
     final dt = (elapsed - _lastTick).inMicroseconds / 1e6;
     _lastTick = elapsed;
-    final ended = _sb.update(dt);
+    final ended =
+        _sb.replaying &&
+        _sb.update(dt, onBeat: (type) => _flashStrike(type == 0));
     if (ended) {
       _ticker.stop();
       _lastTick = Duration.zero;
       setState(() {});
+    } else if (elapsed - _lastStatusTick >= const Duration(milliseconds: 100)) {
+      _lastStatusTick = elapsed;
+      setState(() {});
     }
   }
 
-  void _changeInstrument() {
-    if (_sb.recording) return;
-    setState(() => _mode = (_mode + 1) % 3);
+  void _flashStrike(bool primary) {
+    final next = _strikes.value.abs() + 1;
+    _strikes.value = primary ? next : -next;
+  }
+
+  Future<void> _showInstrumentPicker() async {
+    if (_sb.recording || _sb.replaying) return;
+    final names = [_l10n.drum, _l10n.cymbals, _l10n.gong];
+    final selected = await showDialog<int>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        backgroundColor: const Color(0xFF30171E),
+        title: Text(_l10n.instrument, style: const TextStyle(color: _gold)),
+        children: [
+          for (var mode = 0; mode < names.length; mode++)
+            SimpleDialogOption(
+              onPressed: () => Navigator.of(context).pop(mode),
+              child: Row(
+                children: [
+                  Icon(
+                    _mode == mode ? Icons.check : Icons.music_note_outlined,
+                    color: _gold,
+                  ),
+                  const SizedBox(width: 12),
+                  Text(names[mode]),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (!mounted || selected == null || selected == _mode) return;
+    _sb.stopCymbal();
+    _sb.stopGong();
+    setState(() => _mode = selected);
+  }
+
+  String _drumSoundName(DrumSound sound) => switch (sound) {
+    DrumSound.original => _l10n.drumOriginal,
+    DrumSound.deep => _l10n.drumDeep,
+    DrumSound.warm => _l10n.drumWarm,
+    DrumSound.tight => _l10n.drumTight,
+  };
+
+  Future<void> _showDrumPicker() async {
+    if (_sb.recording || _sb.replaying) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, dialogSetState) => AlertDialog(
+          backgroundColor: const Color(0xFF1A0000),
+          title: Text(_l10n.drumSound, style: const TextStyle(color: _gold)),
+          content: SizedBox(
+            width: 320,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_l10n.drumSoundHint),
+                  const SizedBox(height: 12),
+                  for (final sound in DrumSound.values)
+                    ListTile(
+                      title: Text(_drumSoundName(sound)),
+                      selected: _sb.drumSound == sound,
+                      selectedColor: _gold,
+                      leading: const Icon(Icons.volume_up_outlined),
+                      trailing: _sb.drumSound == sound
+                          ? const Icon(Icons.check, color: _gold)
+                          : null,
+                      onTap: () {
+                        setState(() => _sb.drumSound = sound);
+                        dialogSetState(() {});
+                        _sb.tapDrum();
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(_l10n.close),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _toggleRecord() {
     setState(() {
       if (_sb.recording) {
         _sb.stopRecording();
+        _ticker.stop();
+        _lastTick = Duration.zero;
         _hasUnsavedRecording = _sb.hasRecording;
       } else {
         _activeSavedBeatId = null;
         _hasUnsavedRecording = false;
         _sb.startRecording();
+        _lastTick = Duration.zero;
+        _lastStatusTick = Duration.zero;
+        _ticker.start();
       }
     });
   }
@@ -125,15 +261,21 @@ class _HomeScreenState extends State<HomeScreen>
       } else {
         _sb.startReplay();
         _lastTick = Duration.zero;
+        _lastStatusTick = Duration.zero;
         _ticker.start();
       }
     });
   }
 
   void _onPrimaryTap() {
+    _flashStrike(true);
     switch (_mode) {
       case 0:
         final stopped = _sb.tapDrum();
+        if (stopped) {
+          _ticker.stop();
+          _lastTick = Duration.zero;
+        }
         if (stopped) _hasUnsavedRecording = _sb.hasRecording;
         if (stopped || _sb.recording) setState(() {});
         break;
@@ -146,9 +288,14 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _onSecondaryTap() {
+    _flashStrike(false);
     switch (_mode) {
       case 0:
         final stopped = _sb.tapSide();
+        if (stopped) {
+          _ticker.stop();
+          _lastTick = Duration.zero;
+        }
         if (stopped) _hasUnsavedRecording = _sb.hasRecording;
         if (stopped || _sb.recording) setState(() {});
         break;
@@ -321,46 +468,44 @@ class _HomeScreenState extends State<HomeScreen>
               content: SizedBox(
                 width: dialogWidth,
                 height: dialogHeight,
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _dialogButton(
-                            l10n.saveCurrent,
-                            _sb.hasRecording
-                                ? () => _closeDialogThen(
-                                    dialogContext,
-                                    _saveCurrentBeat,
-                                  )
-                                : null,
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _dialogButton(
+                              l10n.saveCurrent,
+                              _sb.hasRecording
+                                  ? () => _closeDialogThen(
+                                      dialogContext,
+                                      _saveCurrentBeat,
+                                    )
+                                  : null,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    _buildSavedBeatFilter(dialogSetState),
-                    const SizedBox(height: 10),
-                    if (_savedBeats.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        child: Text(
-                          l10n.noSavedBeats,
-                          style: const TextStyle(color: Colors.white60),
-                        ),
-                      )
-                    else
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              for (final beat in sortedBeats)
-                                _buildSavedBeatRow(beat, dialogContext),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
-                  ],
+                      const SizedBox(height: 10),
+                      _buildSavedBeatFilter(dialogSetState),
+                      const SizedBox(height: 10),
+                      if (_savedBeats.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Text(
+                            l10n.noSavedBeats,
+                            style: const TextStyle(color: Colors.white60),
+                          ),
+                        )
+                      else
+                        Column(
+                          children: [
+                            for (final beat in sortedBeats)
+                              _buildSavedBeatRow(beat, dialogContext),
+                          ],
+                        ),
+                    ],
+                  ),
                 ),
               ),
               actions: [
@@ -750,15 +895,48 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void dispose() {
     _ticker.dispose();
-    _sb.dispose();
+    _strikes.dispose();
+    unawaited(_disposeAudio());
     _bannerAd?.dispose();
     super.dispose();
+  }
+
+  Future<void> _disposeAudio() async {
+    try {
+      await _sb.dispose();
+    } catch (error, stack) {
+      debugPrint('Audio shutdown failed: $error\n$stack');
+    }
   }
 
   // ─── Build ───────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
+    if (_audioFailed) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(_l10n.audioLoadError),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _audioFailed = false;
+                    _loading = true;
+                  });
+                  unawaited(_init());
+                },
+                child: Text(_l10n.retry),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     if (_loading) {
       return const Scaffold(
         backgroundColor: Colors.black,
@@ -772,9 +950,25 @@ class _HomeScreenState extends State<HomeScreen>
       body: Stack(
         children: [
           Positioned.fill(
-            child: Image.asset('assets/images/final.jpg', fit: BoxFit.cover),
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                gradient: RadialGradient(
+                  center: Alignment.bottomCenter,
+                  radius: 1.3,
+                  colors: [Color(0xFF481C24), Color(0xFF200C12)],
+                ),
+              ),
+              child: IgnorePointer(
+                child: Opacity(
+                  opacity: 0.045,
+                  child: Image.asset(
+                    'assets/images/final.jpg',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
           ),
-          Positioned.fill(child: Container(color: Colors.black.withAlpha(120))),
           Positioned.fill(child: _buildInstrumentArea()),
           _buildTopBar(),
           if (_showAbout) _buildAboutOverlay(),
@@ -784,161 +978,53 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildInstrumentArea() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final w = constraints.maxWidth;
-        final h = constraints.maxHeight;
-        final outerSize = min(w * 0.95, h * 2.0) * 5 / 9;
-        final outerR = outerSize / 2;
-        final cx = w / 2;
-        final cy = h;
-
-        final color = _instrumentColor();
-
-        return Listener(
-          behavior: HitTestBehavior.opaque,
-          onPointerDown: (event) {
-            final dx = event.localPosition.dx - cx;
-            final dy = event.localPosition.dy - cy;
-            final dist = sqrt(dx * dx + dy * dy);
-            if (dist <= outerR) {
-              _onPrimaryTap();
-            } else {
-              _onSecondaryTap();
-            }
-          },
-          child: Stack(
-            children: [
-              Positioned(
-                left: cx - outerR,
-                top: cy - outerR,
-                width: outerSize,
-                height: outerSize,
-                child: IgnorePointer(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: color,
-                      border: Border.all(color: _gold, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: color.withAlpha(160),
-                          blurRadius: 24,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return InstrumentSurface(
+      color: _instrumentColor(),
+      primaryLabel: [_l10n.drum, _l10n.cymbals, _l10n.gong][_mode],
+      secondaryLabel: _mode == 0 ? _l10n.side : _l10n.mute,
+      onPrimaryTap: _onPrimaryTap,
+      onSecondaryTap: _onSecondaryTap,
+      strikes: _strikes,
     );
+  }
+
+  String get _performanceStatus {
+    final names = [_l10n.drum, _l10n.cymbals, _l10n.gong];
+    if (_mode != 0) return names[_mode];
+    if (_sb.recording) {
+      return '${_l10n.recording} · ${_l10n.beatMetadata(_sb.currentBeatCount, _formatDuration(_sb.elapsedSeconds))}';
+    }
+    if (_sb.replaying) {
+      return '${_l10n.playing} · ${_formatDuration(_sb.elapsedSeconds)} / ${_formatDuration(_sb.recordingDuration)}';
+    }
+    if (_hasUnsavedRecording) return _l10n.unsavedBeat;
+    if (_activeSavedBeatId != null) {
+      for (final beat in _savedBeats) {
+        if (beat.id == _activeSavedBeatId) return beat.name;
+      }
+    }
+    return _l10n.ready;
   }
 
   Widget _buildTopBar() {
-    final l10n = _l10n;
-    final modeNames = [l10n.drum, l10n.cymbals, l10n.gong];
-    final isDrum = _mode == 0;
-    return Stack(
-      children: [
-        if (_bannerLoaded && _bannerAd != null)
-          Align(
-            alignment: Alignment.topCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: SizedBox(
-                width: _bannerAd!.size.width.toDouble(),
-                height: _bannerAd!.size.height.toDouble(),
-                child: AdWidget(ad: _bannerAd!),
-              ),
-            ),
-          ),
-        Align(
-          alignment: Alignment.topLeft,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24, 12, 8, 8),
-            child: Row(
-              children: [
-                _topButton(l10n.menu, _showMainMenu),
-                const SizedBox(width: 8),
-                _topButton(
-                  modeNames[_mode],
-                  _sb.recording ? null : _changeInstrument,
-                ),
-              ],
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.topRight,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 12, 24, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (isDrum && !_sb.replaying)
-                  _topButton(
-                    _sb.recording ? l10n.recording : l10n.record,
-                    _toggleRecord,
-                    active: _sb.recording,
-                    activeColor: _red,
-                  ),
-                if (_sb.hasRecording && !_sb.recording) ...[
-                  if (isDrum && !_sb.replaying) const SizedBox(height: 8),
-                  _topButton(
-                    _sb.replaying ? l10n.playing : l10n.play,
-                    _toggleReplay,
-                    active: _sb.replaying,
-                    activeColor: const Color(0xFF006600),
-                  ),
-                  if (isDrum && !_sb.replaying) ...[
-                    const SizedBox(height: 8),
-                    _topButton(l10n.save, _saveCurrentBeat),
-                    const SizedBox(height: 8),
-                    _topButton(l10n.load, _showBeatsDialog),
-                  ],
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _topButton(
-    String label,
-    VoidCallback? onTap, {
-    bool active = false,
-    Color? activeColor,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: active
-              ? (activeColor ?? _dark)
-              : (onTap != null ? _dark : Colors.black38),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: active ? (activeColor ?? _gold) : _gold.withAlpha(180),
-            width: active ? 2 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active
-                ? Colors.white
-                : (onTap != null ? _gold : Colors.white38),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+    return PerformanceControls(
+      mode: _mode,
+      soundName: _drumSoundName(_sb.drumSound),
+      recording: _sb.recording,
+      replaying: _sb.replaying,
+      hasRecording: _sb.hasRecording,
+      canUseLibrary: _beatStore != null,
+      status: _performanceStatus,
+      onMenu: _showMainMenu,
+      onInstrument: _showInstrumentPicker,
+      onSound: _showDrumPicker,
+      onRecord: _toggleRecord,
+      onReplay: _toggleReplay,
+      onSave: _saveCurrentBeat,
+      onLibrary: _showBeatsDialog,
+      banner: _bannerLoaded && _bannerAd != null
+          ? AdWidget(ad: _bannerAd!)
+          : null,
     );
   }
 
@@ -957,58 +1043,60 @@ class _HomeScreenState extends State<HomeScreen>
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: _gold, width: 2),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/LionIcon.png', height: 64),
-                const SizedBox(height: 12),
-                Text(
-                  'Lion Dance Kit',
-                  style: const TextStyle(
-                    color: _gold,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'v1.1',
-                  style: TextStyle(color: Colors.white54, fontSize: 14),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.aboutDescription,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  l10n.copyright,
-                  style: const TextStyle(color: Colors.white38, fontSize: 12),
-                ),
-                const SizedBox(height: 16),
-                GestureDetector(
-                  onTap: () => setState(() => _showAbout = false),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: _gold),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      l10n.close,
-                      style: const TextStyle(color: _gold),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset('assets/images/LionIcon.png', height: 64),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.appTitle,
+                    style: const TextStyle(
+                      color: _gold,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  const Text(
+                    'v1.1.1',
+                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.aboutDescription,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.copyright,
+                    style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () => setState(() => _showAbout = false),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: _gold),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        l10n.close,
+                        style: const TextStyle(color: _gold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

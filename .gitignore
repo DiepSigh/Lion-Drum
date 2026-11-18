@@ -17,7 +17,6 @@ flutter/.flutter-plugins
 flutter/.flutter-plugins-dependencies
 flutter/build/
 flutter/.packages
-flutter/pubspec.lock
 
 # ─── General ─────────────────────────────────────────────────────────────────
 .vs/

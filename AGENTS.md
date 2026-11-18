@@ -4,10 +4,10 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project Overview
 
-**Lion Dance Kit** (v1.0.0) — a Flutter mobile app for Android and iOS that simulates lion dance percussion instruments (drum, side drum, cymbals, gong). Users can record beat sequences and replay them.
+**Lion Dance Kit** (v1.1.1) — a Flutter mobile app for Android and iOS that simulates lion dance percussion instruments (drum, side drum, cymbals, gong). Users can record beat sequences and replay them.
 
 - Company: DiepSigh
-- Flutter version: 3.41.6 (stable)
+- Flutter version: 3.47.6 (stable)
 - Target platforms: Android (API 37), iOS (16.0+)
 - Package name: `com.DiepSigh.LionDanceKit` (must match existing Play Store listing)
 
@@ -56,7 +56,7 @@ flutter build ios              # iOS (requires Mac)
 
 ## Dependencies
 
-- **`flutter_soloud` ^4.0.2** — low-latency audio (SoLoud engine)
+- **`flutter_soloud` ^5.1.6** — low-latency audio (SoLoud engine); native initialization and shutdown run off the UI isolate
 - **`google_mobile_ads` ^8.0.0** — AdMob banner ads
 - Android ad unit ID: `ca-app-pub-7760662598407173~6261911664`
 - iOS ad unit ID (test): `ca-app-pub-3940256099942544/2934735716`

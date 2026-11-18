@@ -1,0 +1,172 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:lion_dance_kit/instrument_surface.dart';
+import 'package:lion_dance_kit/l10n/app_localizations.dart';
+import 'package:lion_dance_kit/performance_controls.dart';
+
+void main() {
+  testWidgets('original hit geometry supports simultaneous thumb strikes', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final strikes = ValueNotifier(0);
+    addTearDown(strikes.dispose);
+    var primary = 0;
+    var side = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: InstrumentSurface(
+          color: Colors.brown,
+          primaryLabel: 'Drum',
+          secondaryLabel: 'Side',
+          onPrimaryTap: () => primary++,
+          onSecondaryTap: () => side++,
+          strikes: strikes,
+        ),
+      ),
+    );
+    final rect = tester.getRect(find.byKey(const ValueKey('instrument-head')));
+    final diameter = min(800 * 0.95, 400 * 2) * 5 / 9;
+    expect(rect.width, closeTo(diameter, 0.001));
+    expect(rect.center, const Offset(400, 400));
+
+    final left = await tester.startGesture(const Offset(300, 380), pointer: 1);
+    final right = await tester.startGesture(const Offset(500, 380), pointer: 2);
+    expect(primary, 2); // Sounds fire on down, without waiting for release.
+    await left.up();
+    await right.up();
+    await tester.tapAt(const Offset(20, 380));
+    await tester.tapAt(const Offset(780, 380));
+    expect(side, 2);
+  });
+
+  for (final locale in AppLocalizations.supportedLocales) {
+    for (final size in [
+      const Size(432, 320),
+      const Size(568, 320),
+      const Size(844, 390),
+    ]) {
+      testWidgets('controls fit $locale at $size and protect the ad slot', (
+        tester,
+      ) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        var sideHits = 0;
+        var libraryOpens = 0;
+        var instrumentOpens = 0;
+        late AppLocalizations l10n;
+        await tester.pumpWidget(
+          MaterialApp(
+            locale: locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(1.3)),
+              child: child!,
+            ),
+            home: Scaffold(
+              body: Builder(
+                builder: (context) {
+                  l10n = AppLocalizations.of(context);
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: Listener(
+                          behavior: HitTestBehavior.opaque,
+                          onPointerDown: (_) => sideHits++,
+                        ),
+                      ),
+                      PerformanceControls(
+                        mode: 0,
+                        soundName: l10n.drumOriginal,
+                        recording: false,
+                        replaying: false,
+                        hasRecording: false,
+                        canUseLibrary: true,
+                        status: l10n.ready,
+                        onMenu: () {},
+                        onInstrument: () => instrumentOpens++,
+                        onSound: () {},
+                        onRecord: () {},
+                        onReplay: () {},
+                        onSave: () {},
+                        onLibrary: () => libraryOpens++,
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+        final slot = tester.getRect(find.byKey(const ValueKey('banner-slot')));
+        expect(slot.size, const Size(320, 50));
+        for (final element in find.byType(TextButton).evaluate()) {
+          final rect = tester.getRect(find.byWidget(element.widget));
+          expect(rect.overlaps(slot), isFalse);
+          expect(rect.top, greaterThanOrEqualTo(0));
+          expect(rect.bottom, lessThan(size.height - 60));
+        }
+        await tester.tap(find.text(l10n.library));
+        expect(libraryOpens, 1); // Available before the first recording.
+        await tester.tap(find.text(l10n.drum));
+        expect(instrumentOpens, 1);
+        expect(sideHits, 0);
+        await tester.tapAt(slot.center);
+        expect(sideHits, 0); // Empty ad slots must not play percussion.
+        await tester.tapAt(Offset(20, size.height - 20));
+        expect(sideHits, 1); // Bottom thumb zones stay playable.
+      });
+    }
+  }
+
+  testWidgets('recording retains controls and locks incompatible actions', (
+    tester,
+  ) async {
+    var stops = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: PerformanceControls(
+            mode: 0,
+            soundName: 'Original',
+            recording: true,
+            replaying: false,
+            hasRecording: true,
+            canUseLibrary: true,
+            status: 'Recording',
+            onMenu: () {},
+            onInstrument: () {},
+            onSound: () {},
+            onRecord: () => stops++,
+            onReplay: () {},
+            onSave: () {},
+            onLibrary: () {},
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (final label in ['Drum', 'Original', 'Play', 'Save', 'Library']) {
+      final button = tester.widget<TextButton>(
+        find.widgetWithText(TextButton, label),
+      );
+      expect(button.onPressed, isNull);
+    }
+    await tester.tap(find.text('Stop'));
+    expect(stops, 1);
+  });
+}

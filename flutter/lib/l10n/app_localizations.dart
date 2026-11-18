@@ -148,11 +148,107 @@ abstract class AppLocalizations {
   /// **'Menu'**
   String get menu;
 
+  /// No description provided for @instrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Instrument'**
+  String get instrument;
+
+  /// No description provided for @switchInstrument.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch instrument'**
+  String get switchInstrument;
+
+  /// No description provided for @side.
+  ///
+  /// In en, this message translates to:
+  /// **'Side'**
+  String get side;
+
+  /// No description provided for @mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get mute;
+
+  /// No description provided for @stop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get stop;
+
+  /// No description provided for @stopRecording.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get stopRecording;
+
+  /// No description provided for @stopPlayback.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop playback'**
+  String get stopPlayback;
+
+  /// No description provided for @library.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get library;
+
+  /// No description provided for @ready.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready'**
+  String get ready;
+
+  /// No description provided for @unsavedBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsaved beat'**
+  String get unsavedBeat;
+
   /// No description provided for @drum.
   ///
   /// In en, this message translates to:
   /// **'Drum'**
   String get drum;
+
+  /// No description provided for @drumSound.
+  ///
+  /// In en, this message translates to:
+  /// **'Sound'**
+  String get drumSound;
+
+  /// No description provided for @drumSoundHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a sound to select and preview it.'**
+  String get drumSoundHint;
+
+  /// No description provided for @drumOriginal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original'**
+  String get drumOriginal;
+
+  /// No description provided for @drumDeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Deep'**
+  String get drumDeep;
+
+  /// No description provided for @drumWarm.
+  ///
+  /// In en, this message translates to:
+  /// **'Warm'**
+  String get drumWarm;
+
+  /// No description provided for @drumTight.
+  ///
+  /// In en, this message translates to:
+  /// **'Tight'**
+  String get drumTight;
 
   /// No description provided for @cymbals.
   ///
@@ -387,6 +483,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved beats could not be loaded.'**
   String get savedBeatsLoadError;
+
+  /// No description provided for @audioLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio could not be started. Please try again.'**
+  String get audioLoadError;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get retry;
 
   /// No description provided for @aboutDescription.
   ///

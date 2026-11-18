@@ -1,7 +1,7 @@
 name: lion_dance_kit
 description: "Lion Dance Kit - percussion instrument simulator"
 publish_to: 'none'
-version: 1.1.0+14
+version: 1.1.1+15
 
 environment:
   sdk: ^3.11.4
@@ -12,7 +12,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  flutter_soloud: ^4.0.2
+  flutter_soloud: ^5.1.6
   google_mobile_ads: ^8.0.0
   path_provider: ^2.1.5
   shared_preferences: ^2.5.3
@@ -27,6 +27,9 @@ flutter:
   uses-material-design: true
   assets:
     - assets/sounds/drum.wav
+    - assets/sounds/drum_deep.wav
+    - assets/sounds/drum_warm.wav
+    - assets/sounds/drum_tight.wav
     - assets/sounds/side.wav
     - assets/sounds/cymbal.wav
     - assets/sounds/cymbal2.wav
