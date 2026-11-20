@@ -13,6 +13,8 @@
   },
   "about": "About",
   "menu": "Menu",
+  "visitYmtWebsite": "Visit YMT Lion Dance",
+  "websiteOpenError": "Could not open the website. Please try again.",
   "instrument": "Instrument",
   "switchInstrument": "Switch instrument",
   "side": "Side",

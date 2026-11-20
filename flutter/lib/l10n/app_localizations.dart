@@ -148,6 +148,18 @@ abstract class AppLocalizations {
   /// **'Menu'**
   String get menu;
 
+  /// No description provided for @visitYmtWebsite.
+  ///
+  /// In en, this message translates to:
+  /// **'Visit YMT Lion Dance'**
+  String get visitYmtWebsite;
+
+  /// No description provided for @websiteOpenError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open the website. Please try again.'**
+  String get websiteOpenError;
+
   /// No description provided for @instrument.
   ///
   /// In en, this message translates to:

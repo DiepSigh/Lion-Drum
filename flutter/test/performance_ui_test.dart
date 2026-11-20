@@ -7,6 +7,81 @@ import 'package:lion_dance_kit/l10n/app_localizations.dart';
 import 'package:lion_dance_kit/performance_controls.dart';
 
 void main() {
+  for (final locale in AppLocalizations.supportedLocales) {
+    for (final mode in [1, 2]) {
+      for (final state in ['empty', 'ready', 'playing']) {
+        final replaying = state == 'playing';
+        final hasRecording = state != 'empty';
+        testWidgets(
+          'practice backing-track controls work in mode $mode, $state, $locale',
+          (tester) async {
+            var replayToggles = 0;
+            var instrumentOpens = 0;
+            var libraryOpens = 0;
+            late AppLocalizations l10n;
+            await tester.pumpWidget(
+              MaterialApp(
+                locale: locale,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                supportedLocales: AppLocalizations.supportedLocales,
+                home: Scaffold(
+                  body: Builder(
+                    builder: (context) {
+                      l10n = AppLocalizations.of(context);
+                      return PerformanceControls(
+                        mode: mode,
+                        soundName: l10n.drumOriginal,
+                        recording: false,
+                        replaying: replaying,
+                        hasRecording: hasRecording,
+                        canUseLibrary: true,
+                        status: replaying ? l10n.playing : l10n.ready,
+                        onMenu: () {},
+                        onInstrument: () => instrumentOpens++,
+                        onSound: () {},
+                        onRecord: () {},
+                        onReplay: () => replayToggles++,
+                        onSave: () {},
+                        onLibrary: () => libraryOpens++,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            );
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull);
+            expect(find.text(l10n.record), findsNothing);
+            await tester.tap(find.text(mode == 1 ? l10n.cymbals : l10n.gong));
+            expect(
+              instrumentOpens,
+              1,
+            ); // Switching stays available during replay.
+            final playback = find.widgetWithText(
+              TextButton,
+              replaying ? l10n.stop : l10n.play,
+            );
+            if (hasRecording) {
+              await tester.tap(playback);
+              expect(replayToggles, 1);
+            } else {
+              expect(tester.widget<TextButton>(playback).onPressed, isNull);
+            }
+            final library = find.widgetWithText(TextButton, l10n.library);
+            expect(library, findsOneWidget);
+            if (replaying) {
+              // Stop before replacing the backing track from the library.
+              expect(tester.widget<TextButton>(library).onPressed, isNull);
+            } else {
+              await tester.tap(library);
+              expect(libraryOpens, 1);
+            }
+          },
+        );
+      }
+    }
+  }
+
   testWidgets('original hit geometry supports simultaneous thumb strikes', (
     tester,
   ) async {

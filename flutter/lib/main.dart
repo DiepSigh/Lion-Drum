@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'home_screen.dart';
+import 'ui/kit_styles.dart';
 import 'l10n/app_localizations.dart';
 
 const _localePreferenceKey = 'selected_locale_code';
@@ -50,13 +51,7 @@ class _LionDanceKitAppState extends State<LionDanceKitApp> {
         GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFCC0000),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
+      theme: KitStyles.theme,
       home: HomeScreen(locale: _locale, onLocaleChanged: _setLocale),
     );
   }

@@ -1,37 +1,61 @@
-# lion_dance_kit
+# Lion Dance Kit development
+
+The active Flutter project supports Android and iOS, with a browser preview for UI
+and storage work. Start with the repository [documentation index](../README.md),
+[contributor/UI rules](../AGENTS.md), and [implementation reference](../reference.md).
+
+## Local development
+
+Use the SDK required by `pubspec.yaml` and the current audio plugin. From this
+`flutter/` directory:
+
+```powershell
+flutter pub get
+flutter run
+flutter analyze
+flutter test
+```
+
+On Windows, the audio plugin's host test build requires Visual Studio C++ tools.
+See [validation limits](../reference.md#validation-and-honest-limits) for isolated
+UI/storage testing and its limitations. Build/release commands and store testing
+belong to the [release checklist](RELEASE_CHECKLIST.md).
 
 ## Browser preview
 
-From this directory, run the app in Chrome.
+Run the app in Chrome with the audio worker's required headers:
 
 ```powershell
 flutter run -d chrome --web-hostname=127.0.0.1 --web-port=7357 --web-header=Cross-Origin-Opener-Policy=same-origin --web-header=Cross-Origin-Embedder-Policy=require-corp
 ```
 
-Use `-d edge` for Microsoft Edge. The headers enable SoLoud's audio worker.
-Press `r` in the terminal to hot reload changes or `R` to restart the app.
-Click an instrument to allow the browser to start audio playback.
+Use `-d edge` for Microsoft Edge. Click an instrument to allow browser audio.
+Press `r` for hot reload or `R` to restart Dart state. After adding a plugin, fully
+stop and relaunch `flutter run` so platform registration is regenerated, then
+refresh the browser. If a website launch still fails, inspect the browser console
+rather than assuming it is mobile-only.
 
-Saved beats and the selected language are stored in this browser. Keep the
-same hostname, port, and browser to reuse them across runs. Clearing browser site data
-also clears saved beats. AdMob is skipped in browser previews.
+Saved beats and the selected language are stored in this browser. Keep the same
+hostname, port, and browser to reuse them. Clearing browser site data clears them.
+AdMob is skipped in browser previews. Use a phone for audio latency, live mixing,
+multitouch, lifecycle, and ad checks; see the required practice workflow in AGENTS.
 
-Use a phone for final checks of audio latency, multitouch, and ads.
+To compile the web preview:
 
-To build the web app, run `flutter build web`.
+```powershell
+flutter build web
+```
 
-A new Flutter project.
+## Translation and shared UI changes
 
-## Getting Started
+Edit `lib/l10n/app_en.arb`, `app_zh.arb`, and `app_vi.arb`, then regenerate:
 
-This project is a starting point for a Flutter application.
+```powershell
+flutter gen-l10n
+dart format lib test
+flutter analyze
+```
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Use the existing components/tokens under `lib/ui/` for repeated presentation. The
+[reviewed UI table](../reference.md#shared-ui-library-and-reviewed-decisions) records
+current choices; AGENTS owns the policy for changing them.

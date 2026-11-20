@@ -1,7 +1,7 @@
 name: lion_dance_kit
 description: "Lion Dance Kit - percussion instrument simulator"
 publish_to: 'none'
-version: 1.1.1+15
+version: 1.1.2+16
 
 environment:
   sdk: ^3.11.4
@@ -16,6 +16,7 @@ dependencies:
   google_mobile_ads: ^8.0.0
   path_provider: ^2.1.5
   shared_preferences: ^2.5.3
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:
@@ -36,4 +37,5 @@ flutter:
     - assets/sounds/gong2.wav
     - assets/sounds/gong_aligned.wav
     - assets/images/final.jpg
+    - assets/images/ymt-logo.png
     - assets/images/LionIcon.png

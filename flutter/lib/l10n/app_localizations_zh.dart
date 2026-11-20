@@ -35,6 +35,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get menu => '菜单';
 
   @override
+  String get visitYmtWebsite => '访问 YMT Lion Dance';
+
+  @override
+  String get websiteOpenError => '无法打开网站，请重试。';
+
+  @override
   String get instrument => '乐器';
 
   @override

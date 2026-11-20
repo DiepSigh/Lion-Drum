@@ -8,6 +8,8 @@
   "languageSaved": "语言已设为{language}。",
   "about": "关于",
   "menu": "菜单",
+  "visitYmtWebsite": "访问 YMT Lion Dance",
+  "websiteOpenError": "无法打开网站，请重试。",
   "instrument": "乐器",
   "switchInstrument": "切换乐器",
   "side": "鼓边",

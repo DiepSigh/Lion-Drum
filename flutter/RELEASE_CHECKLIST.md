@@ -1,4 +1,60 @@
-# Android stability update: 1.1.1 (15)
+# Android release checklist
+
+This document owns Android release operations. Contributor and UI rules live in
+[AGENTS](../AGENTS.md); component/storage lookup and validation limits live in
+[the implementation reference](../reference.md). The validation record below
+describes the earlier stability build; rerun checks against the current checkout
+after subsequent UI or behavior changes.
+
+## Pending release highlights
+
+No additional highlights beyond the prepared 1.1.2 notes below. Add new meaningful
+user-facing changes here during subsequent work; the prepared notes remain
+unpublished until the Play release is confirmed.
+
+Maintain this short list during normal work. The [release policy](../AGENTS.md#release-policy)
+governs version bumps; [the reference](../reference.md#release-documentation) owns
+the source-to-Android version mapping and release-note conventions.
+
+## Prepared release: 1.1.2 (16)
+
+Prepared November 20, 2026 at the user's request; not uploaded or published.
+Build 16 is the next number from local project metadata. Confirm it exceeds all
+used Play Console build numbers before uploading; no Console verification has
+been performed.
+
+Patch scope: restored existing practice controls, compact menus, consistent shared
+presentation, and a menu website link. The four drum sounds and audio latency work
+were already in the 1.1.1 source baseline and are not new 1.1.2 highlights.
+
+### User-facing notes
+
+- Keep recorded drums playing while switching to cymbals or gong.
+- Choose drum sounds and adjust settings in compact landscape menus.
+- Visit YMT Lion Dance from the menu.
+
+### Verification status
+
+- Product version and About label agree on 1.1.2; `pubspec.yaml` specifies build 16.
+- Shared-UI implementation passed Flutter analysis, web compilation, 48 isolated UI/storage tests, and representative rendered dialog review before the version-only update.
+- No signed 1.1.2 AAB has been built or uploaded as part of this version bump.
+- Real-device audio/mixing/ad checks remain outstanding. No phone is connected; the local Pixel emulator cannot start because the acceleration driver is unavailable. The iOS AdMob App ID remains unconfigured.
+
+## Prepare an approved release
+
+1. Confirm the user has requested release preparation and establish the latest actually uploaded/published version and highest used build number in Play Console, across all tracks.
+2. Review accumulated changes and pending highlights. Choose the product version by user impact (or use the exact requested version) and a higher unused store build number.
+3. Set `version: MAJOR.MINOR.PATCH+BUILD` in `pubspec.yaml`. Check/update the About label in `home_screen.dart` and the approved notes so they agree. Avoid unrecorded build-name/build-number overrides.
+4. Run the checks below and verify the required physical-device practice/audio/ad workflow. Report unavailable checks instead of marking them passed.
+5. Build the signed AAB, inspect its effective version name/code, and record the artifact's source commit and validation results in the release handoff. Do not assume a previous bundle in `build/` contains the latest changes.
+6. On explicit authorization to upload/publish, test that exact artifact on the internal track, then promote the tested bundle. Rebuilding a corrected binary needs another unused increasing build number; promoting the same bundle does not.
+7. Curate the pending highlights for that release. After publication is confirmed, retain its version/build and notes in this document's release history and remove only the highlights actually shipped. Do not publish or create Git release tags during ordinary implementation work.
+
+## Stability update record: 1.1.1 (15)
+
+The sections below retain the earlier stability update's engineering record and
+release procedure. Its title/version is historical, not a request to upload build
+15 again or a claim that these later interface changes have shipped.
 
 ## Changes
 
@@ -34,7 +90,7 @@ Version code 15 must be unused in Play Console. If it has already been uploaded,
 2. Create a release and upload the AAB. Use release notes: "Improved startup reliability and audio stability."
 3. Publish to internal testing and install from the tester opt-in link using a tester account.
 4. Update an existing installation. Verify saved beats and language preferences survive.
-5. Check drum, side drum, cymbals, gong, play/stop, recording, replay, saving/loading, and banner ads.
+5. Check drum, side drum, cymbals, gong, play/stop, recording, replay, saving/loading, and banner ads, including the required uninterrupted practice workflow in [AGENTS](../AGENTS.md).
 6. Repeatedly cold-launch and reopen the app. Try rapid tapping, background/resume while playing or loading, and switching between speaker, wired headphones, and Bluetooth where available. Include phone models listed in the ANRs.
 7. Check the pre-launch report. Local tests and a successful build do not prove that a production ANR is fixed.
 

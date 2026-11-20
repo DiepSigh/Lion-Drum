@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import 'l10n/app_localizations.dart';
+import 'ui/kit_button.dart';
+import 'ui/kit_styles.dart';
 
 /// Upper controls leave the bottom thumb zones and the banner slot untouched.
 class PerformanceControls extends StatelessWidget {
@@ -87,15 +89,15 @@ class PerformanceControls extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   spacing: 6,
                   children: [
-                    _ControlButton(label: l10n.menu, onPressed: onMenu),
-                    _ControlButton(
+                    KitToolbarButton(label: l10n.menu, onPressed: onMenu),
+                    KitToolbarButton(
                       label: modeName,
                       tooltip: l10n.switchInstrument,
                       icon: Icons.keyboard_arrow_down,
-                      onPressed: idle ? onInstrument : null,
+                      onPressed: recording ? null : onInstrument,
                     ),
                     if (mode == 0)
-                      _ControlButton(
+                      KitToolbarButton(
                         label: soundName,
                         tooltip: l10n.drumSound,
                         icon: Icons.keyboard_arrow_down,
@@ -113,117 +115,51 @@ class PerformanceControls extends StatelessWidget {
                     status,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFFC8B09C),
+                      color: KitStyles.statusForeground,
                       fontSize: 12,
                     ),
                   ),
                 ),
               ),
-              if (mode == 0)
-                Positioned(
-                  right: 12,
-                  top: controlsTop,
-                  width: railWidth,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    spacing: 6,
-                    children: [
-                      _ControlButton(
+              Positioned(
+                right: 12,
+                top: controlsTop,
+                width: railWidth,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  spacing: 6,
+                  children: [
+                    if (mode == 0)
+                      KitToolbarButton(
                         label: recording ? l10n.stop : l10n.record,
                         tooltip: recording ? l10n.stopRecording : l10n.record,
                         onPressed: replaying ? null : onRecord,
                         record: true,
                         active: recording,
                       ),
-                      _ControlButton(
-                        label: replaying ? l10n.stop : l10n.play,
-                        tooltip: replaying ? l10n.stopPlayback : l10n.play,
-                        onPressed: hasRecording && !recording ? onReplay : null,
-                        active: replaying,
-                      ),
-                      _ControlButton(
+                    KitToolbarButton(
+                      label: replaying ? l10n.stop : l10n.play,
+                      tooltip: replaying ? l10n.stopPlayback : l10n.play,
+                      onPressed: hasRecording && !recording ? onReplay : null,
+                      active: replaying,
+                    ),
+                    if (mode == 0)
+                      KitToolbarButton(
                         label: l10n.save,
                         onPressed: hasRecording && idle && canUseLibrary
                             ? onSave
                             : null,
                       ),
-                      _ControlButton(
-                        label: l10n.library,
-                        onPressed: idle && canUseLibrary ? onLibrary : null,
-                      ),
-                    ],
-                  ),
+                    KitToolbarButton(
+                      label: l10n.library,
+                      onPressed: idle && canUseLibrary ? onLibrary : null,
+                    ),
+                  ],
                 ),
+              ),
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _ControlButton extends StatelessWidget {
-  const _ControlButton({
-    required this.label,
-    required this.onPressed,
-    this.tooltip,
-    this.icon,
-    this.record = false,
-    this.active = false,
-  });
-
-  final String label;
-  final String? tooltip;
-  final VoidCallback? onPressed;
-  final IconData? icon;
-  final bool record;
-  final bool active;
-
-  @override
-  Widget build(BuildContext context) {
-    const gold = Color(0xFFE5CA9A);
-    return Tooltip(
-      message: tooltip ?? label,
-      child: TextButton(
-        onPressed: onPressed,
-        style: TextButton.styleFrom(
-          minimumSize: const Size(44, 44),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          foregroundColor: record ? const Color(0xFFFFF1DF) : gold,
-          disabledForegroundColor: gold.withAlpha(85),
-          backgroundColor: record
-              ? const Color(0xFF942B39)
-              : const Color(0xE62C151B),
-          side: BorderSide(
-            color: (record ? const Color(0xFFC35158) : gold).withAlpha(
-              active ? 230 : 75,
-            ),
-          ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(7)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (record) ...[
-              const Icon(Icons.circle, size: 8),
-              const SizedBox(width: 5),
-            ],
-            Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 13),
-              ),
-            ),
-            if (icon != null) ...[
-              const SizedBox(width: 2),
-              Icon(icon, size: 16),
-            ],
-          ],
-        ),
       ),
     );
   }

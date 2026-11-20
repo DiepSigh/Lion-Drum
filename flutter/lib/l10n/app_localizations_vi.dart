@@ -35,6 +35,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get menu => 'Menu';
 
   @override
+  String get visitYmtWebsite => 'Truy cập YMT Lion Dance';
+
+  @override
+  String get websiteOpenError => 'Không thể mở trang web. Vui lòng thử lại.';
+
+  @override
   String get instrument => 'Nhạc cụ';
 
   @override

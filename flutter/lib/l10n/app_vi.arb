@@ -8,6 +8,8 @@
   "languageSaved": "Đã chuyển sang {language}.",
   "about": "Giới thiệu",
   "menu": "Menu",
+  "visitYmtWebsite": "Truy cập YMT Lion Dance",
+  "websiteOpenError": "Không thể mở trang web. Vui lòng thử lại.",
   "instrument": "Nhạc cụ",
   "switchInstrument": "Đổi nhạc cụ",
   "side": "Thành trống",

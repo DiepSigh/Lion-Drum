@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'ui/kit_styles.dart';
 
 /// The original bottom-centered instrument, including its full-screen side zone.
 class InstrumentSurface extends StatefulWidget {
@@ -83,9 +84,9 @@ class _InstrumentSurfaceState extends State<InstrumentSurface> {
         final diameter = min(w * 0.95, h * 2.0) * 5 / 9;
         final radius = diameter / 2;
         final center = Offset(w / 2, h);
-        const gold = Color(0xFFD7B675);
+        const gold = KitStyles.gold;
         const labelStyle = TextStyle(
-          color: Color(0xB3E5CCA4),
+          color: KitStyles.instrumentLabel,
           fontSize: 12,
           letterSpacing: 1.5,
           fontWeight: FontWeight.w600,

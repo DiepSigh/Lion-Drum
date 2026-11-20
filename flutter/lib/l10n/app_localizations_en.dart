@@ -35,6 +35,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menu => 'Menu';
 
   @override
+  String get visitYmtWebsite => 'Visit YMT Lion Dance';
+
+  @override
+  String get websiteOpenError =>
+      'Could not open the website. Please try again.';
+
+  @override
   String get instrument => 'Instrument';
 
   @override

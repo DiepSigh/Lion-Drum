@@ -1,0 +1,5 @@
+YMT Lion Dance logo
+Official website: https://www.ymtliondance.com/
+Original asset: https://www.ymtliondance.com/ymt-logo.png
+Retrieved: 2026-11-19
+The original downloaded PNG is unchanged; Flutter controls its display opacity.

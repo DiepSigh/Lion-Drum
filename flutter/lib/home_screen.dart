@@ -4,11 +4,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'l10n/app_localizations.dart';
 import 'instrument_surface.dart';
 import 'performance_controls.dart';
 import 'saved_beat.dart';
 import 'soundboard.dart';
+import 'ui/kit_button.dart';
+import 'ui/kit_dialog.dart';
+import 'ui/kit_styles.dart';
 
 enum _SavedBeatFilter { name, date, duration }
 
@@ -39,7 +43,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   // 0 = Drum, 1 = Cymbals, 2 = Gong
   int _mode = 0;
-  bool _showAbout = false;
 
   late Ticker _ticker;
   Duration _lastTick = Duration.zero;
@@ -49,8 +52,8 @@ class _HomeScreenState extends State<HomeScreen>
   BannerAd? _bannerAd;
   bool _bannerLoaded = false;
 
-  static const _red = Color(0xFFCC0000);
-  static const _gold = Color(0xFFD7B675);
+  static const _red = KitStyles.brandRed;
+  static const _gold = KitStyles.gold;
 
   AppLocalizations get _l10n => AppLocalizations.of(context);
 
@@ -133,7 +136,13 @@ class _HomeScreenState extends State<HomeScreen>
     _lastTick = elapsed;
     final ended =
         _sb.replaying &&
-        _sb.update(dt, onBeat: (type) => _flashStrike(type == 0));
+        _sb.update(
+          dt,
+          onBeat: (type) {
+            // The backing track is always drums, regardless of the live instrument.
+            if (_mode == 0) _flashStrike(type == 0);
+          },
+        );
     if (ended) {
       _ticker.stop();
       _lastTick = Duration.zero;
@@ -150,29 +159,35 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _showInstrumentPicker() async {
-    if (_sb.recording || _sb.replaying) return;
+    if (_sb.recording) return;
     final names = [_l10n.drum, _l10n.cymbals, _l10n.gong];
     final selected = await showDialog<int>(
       context: context,
-      builder: (context) => SimpleDialog(
-        backgroundColor: const Color(0xFF30171E),
+      builder: (context) => KitDialog(
         title: Text(_l10n.instrument, style: const TextStyle(color: _gold)),
-        children: [
-          for (var mode = 0; mode < names.length; mode++)
-            SimpleDialogOption(
-              onPressed: () => Navigator.of(context).pop(mode),
-              child: Row(
-                children: [
-                  Icon(
-                    _mode == mode ? Icons.check : Icons.music_note_outlined,
-                    color: _gold,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(names[mode]),
-                ],
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var mode = 0; mode < names.length; mode++)
+              SimpleDialogOption(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 12,
+                ),
+                onPressed: () => Navigator.of(context).pop(mode),
+                child: Row(
+                  children: [
+                    Icon(
+                      _mode == mode ? Icons.check : Icons.music_note_outlined,
+                      color: _gold,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(names[mode]),
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
     if (!mounted || selected == null || selected == _mode) return;
@@ -193,34 +208,38 @@ class _HomeScreenState extends State<HomeScreen>
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, dialogSetState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A0000),
+        builder: (context, dialogSetState) => KitDialog(
+          scrollable: true,
           title: Text(_l10n.drumSound, style: const TextStyle(color: _gold)),
           content: SizedBox(
-            width: 320,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_l10n.drumSoundHint),
-                  const SizedBox(height: 12),
-                  for (final sound in DrumSound.values)
-                    ListTile(
-                      title: Text(_drumSoundName(sound)),
-                      selected: _sb.drumSound == sound,
-                      selectedColor: _gold,
-                      leading: const Icon(Icons.volume_up_outlined),
-                      trailing: _sb.drumSound == sound
-                          ? const Icon(Icons.check, color: _gold)
-                          : null,
-                      onTap: () {
-                        setState(() => _sb.drumSound = sound);
-                        dialogSetState(() {});
-                        _sb.tapDrum();
-                      },
+            width: 360,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_l10n.drumSoundHint),
+                const SizedBox(height: 8),
+                for (var row = 0; row < 2; row++)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: row == 0 ? 8 : 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _drumSoundOption(
+                            DrumSound.values[row * 2],
+                            dialogSetState,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _drumSoundOption(
+                            DrumSound.values[row * 2 + 1],
+                            dialogSetState,
+                          ),
+                        ),
+                      ],
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
           ),
           actions: [
@@ -231,6 +250,20 @@ class _HomeScreenState extends State<HomeScreen>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _drumSoundOption(DrumSound sound, StateSetter dialogSetState) {
+    final selected = _sb.drumSound == sound;
+    return TextButton.icon(
+      onPressed: () {
+        setState(() => _sb.drumSound = sound);
+        dialogSetState(() {});
+        _sb.tapDrum();
+      },
+      icon: Icon(selected ? Icons.check : Icons.volume_up_outlined, size: 18),
+      label: Text(_drumSoundName(sound)),
+      style: KitStyles.choiceButton(selected: selected),
     );
   }
 
@@ -323,12 +356,8 @@ class _HomeScreenState extends State<HomeScreen>
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A0000),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: _gold, width: 2),
-          ),
+        return KitDialog(
+          scrollable: true,
           title: Text(l10n.language, style: const TextStyle(color: _gold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -401,22 +430,32 @@ class _HomeScreenState extends State<HomeScreen>
     await showDialog<void>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A0000),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: _gold, width: 2),
+        return KitDialog(
+          scrollable: true,
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/images/ymt-logo.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.contain,
+                semanticLabel: 'YMT Lion Dance',
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(l10n.menu, style: const TextStyle(color: _gold)),
+              ),
+            ],
           ),
-          title: Text(l10n.menu, style: const TextStyle(color: _gold)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(
                 width: double.infinity,
-                child: _dialogButton(l10n.about, () {
-                  Navigator.of(dialogContext).pop();
-                  setState(() => _showAbout = true);
-                }),
+                child: _dialogButton(
+                  l10n.about,
+                  () => _closeDialogThen(dialogContext, _showAboutDialog),
+                ),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -427,6 +466,10 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: _dialogButton(l10n.visitYmtWebsite, _openYmtWebsite),
+              ),
             ],
           ),
           actions: [
@@ -438,6 +481,18 @@ class _HomeScreenState extends State<HomeScreen>
         );
       },
     );
+  }
+
+  Future<void> _openYmtWebsite() async {
+    try {
+      final opened = await launchUrl(
+        Uri.parse('https://www.ymtliondance.com/'),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) _showSnack(_l10n.websiteOpenError);
+    } catch (_) {
+      if (mounted) _showSnack(_l10n.websiteOpenError);
+    }
   }
 
   Future<void> _showBeatsDialog() async {
@@ -455,12 +510,8 @@ class _HomeScreenState extends State<HomeScreen>
           builder: (context, dialogSetState) {
             final sortedBeats = _sortedSavedBeats();
 
-            return AlertDialog(
-              backgroundColor: const Color(0xFF1A0000),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: _gold, width: 2),
-              ),
+            return KitDialog(
+              scrollable: false,
               title: Text(
                 l10n.savedBeats,
                 style: const TextStyle(color: _gold),
@@ -540,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen>
           DropdownButtonHideUnderline(
             child: DropdownButton<_SavedBeatFilter>(
               value: _savedBeatFilter,
-              dropdownColor: const Color(0xFF1A0000),
+              dropdownColor: KitStyles.dialogSurface,
               iconEnabledColor: _gold,
               style: const TextStyle(color: _gold, fontWeight: FontWeight.w600),
               items: [
@@ -788,8 +839,7 @@ class _HomeScreenState extends State<HomeScreen>
     final name = await showDialog<String>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A0000),
+        return KitDialog(
           title: Text(l10n.nameBeat, style: const TextStyle(color: _gold)),
           content: TextField(
             controller: controller,
@@ -830,8 +880,7 @@ class _HomeScreenState extends State<HomeScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFF1A0000),
+        return KitDialog(
           title: Text(title, style: const TextStyle(color: _gold)),
           content: Text(message, style: const TextStyle(color: Colors.white70)),
           actions: [
@@ -851,27 +900,13 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _dialogButton(String label, VoidCallback? onTap) {
-    return TextButton(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        foregroundColor: _gold,
-        disabledForegroundColor: Colors.white38,
-        side: BorderSide(color: onTap == null ? Colors.white24 : _gold),
-      ),
-      child: Text(label),
-    );
+    return KitDialogButton(label: label, onPressed: onTap);
   }
 
   Widget _smallDialogButton(String label, VoidCallback? onTap) {
     return TextButton(
       onPressed: onTap,
-      style: TextButton.styleFrom(
-        foregroundColor: _gold,
-        disabledForegroundColor: Colors.white38,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        minimumSize: const Size(0, 32),
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      ),
+      style: KitStyles.smallDialogButton,
       child: Text(label, style: const TextStyle(fontSize: 12)),
     );
   }
@@ -941,7 +976,7 @@ class _HomeScreenState extends State<HomeScreen>
       return const Scaffold(
         backgroundColor: Colors.black,
         body: Center(
-          child: CircularProgressIndicator(color: Color(0xFFCC0000)),
+          child: CircularProgressIndicator(color: KitStyles.brandRed),
         ),
       );
     }
@@ -955,7 +990,7 @@ class _HomeScreenState extends State<HomeScreen>
                 gradient: RadialGradient(
                   center: Alignment.bottomCenter,
                   radius: 1.3,
-                  colors: [Color(0xFF481C24), Color(0xFF200C12)],
+                  colors: KitStyles.backgroundColors,
                 ),
               ),
               child: IgnorePointer(
@@ -964,6 +999,7 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Image.asset(
                     'assets/images/final.jpg',
                     fit: BoxFit.cover,
+                    excludeFromSemantics: true,
                   ),
                 ),
               ),
@@ -971,7 +1007,6 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           Positioned.fill(child: _buildInstrumentArea()),
           _buildTopBar(),
-          if (_showAbout) _buildAboutOverlay(),
         ],
       ),
     );
@@ -990,13 +1025,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   String get _performanceStatus {
     final names = [_l10n.drum, _l10n.cymbals, _l10n.gong];
-    if (_mode != 0) return names[_mode];
     if (_sb.recording) {
       return '${_l10n.recording} · ${_l10n.beatMetadata(_sb.currentBeatCount, _formatDuration(_sb.elapsedSeconds))}';
     }
     if (_sb.replaying) {
       return '${_l10n.playing} · ${_formatDuration(_sb.elapsedSeconds)} / ${_formatDuration(_sb.recordingDuration)}';
     }
+    if (_mode != 0) return names[_mode];
     if (_hasUnsavedRecording) return _l10n.unsavedBeat;
     if (_activeSavedBeatId != null) {
       for (final beat in _savedBeats) {
@@ -1028,78 +1063,46 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildAboutOverlay() {
+  Future<void> _showAboutDialog() async {
     final l10n = _l10n;
-    return GestureDetector(
-      onTap: () => setState(() => _showAbout = false),
-      child: Container(
-        color: Colors.black.withAlpha(200),
-        child: Center(
-          child: Container(
-            margin: const EdgeInsets.all(32),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A0000),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: _gold, width: 2),
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => KitDialog(
+        title: Text(l10n.appTitle, style: const TextStyle(color: _gold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset('assets/images/LionIcon.png', height: 40),
+                const SizedBox(width: 12),
+                const Text('v1.1.2', style: TextStyle(color: Colors.white54)),
+              ],
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset('assets/images/LionIcon.png', height: 64),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.appTitle,
-                    style: const TextStyle(
-                      color: _gold,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'v1.1.1',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.aboutDescription,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.copyright,
-                    style: const TextStyle(color: Colors.white38, fontSize: 12),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () => setState(() => _showAbout = false),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: _gold),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        l10n.close,
-                        style: const TextStyle(color: _gold),
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 12),
+            Text(
+              l10n.aboutDescription,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                height: 1.5,
               ),
             ),
-          ),
+            const SizedBox(height: 12),
+            Text(
+              l10n.copyright,
+              style: const TextStyle(color: Colors.white38, fontSize: 12),
+            ),
+          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(l10n.close, style: const TextStyle(color: _gold)),
+          ),
+        ],
       ),
     );
   }
