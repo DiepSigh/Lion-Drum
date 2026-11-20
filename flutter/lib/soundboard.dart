@@ -61,7 +61,9 @@ class Soundboard {
 
   Future<void> _initialize() async {
     try {
-      await _soloud.init();
+      // Live instruments must respond quickly alongside the recorded drums.
+      // 256 frames is ~5.8 ms at 44.1 kHz; the default 2048 is ~46.4 ms.
+      await _soloud.init(bufferSize: 256);
       if (_disposed) return;
       _drumSources.clear();
       for (final sound in DrumSound.values) {
@@ -73,7 +75,8 @@ class Soundboard {
       if (_disposed) return;
       _cymbalSource = await _soloud.loadAsset('assets/sounds/cymbal.wav');
       if (_disposed) return;
-      _gongSource = await _soloud.loadAsset('assets/sounds/gong2.wav');
+      // Trimmed 10 ms of quiet lead-in; gong2.wav preserves the original audio.
+      _gongSource = await _soloud.loadAsset('assets/sounds/gong_aligned.wav');
     } catch (_) {
       // Also clean up partial loads before a user retries initialization.
       await _soloud.deinitAsync();

@@ -34,5 +34,6 @@ flutter:
     - assets/sounds/cymbal.wav
     - assets/sounds/cymbal2.wav
     - assets/sounds/gong2.wav
+    - assets/sounds/gong_aligned.wav
     - assets/images/final.jpg
     - assets/images/LionIcon.png

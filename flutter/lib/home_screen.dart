@@ -268,7 +268,6 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _onPrimaryTap() {
-    _flashStrike(true);
     switch (_mode) {
       case 0:
         final stopped = _sb.tapDrum();
@@ -285,10 +284,10 @@ class _HomeScreenState extends State<HomeScreen>
       default:
         _sb.tapGong();
     }
+    _flashStrike(true);
   }
 
   void _onSecondaryTap() {
-    _flashStrike(false);
     switch (_mode) {
       case 0:
         final stopped = _sb.tapSide();
@@ -305,6 +304,7 @@ class _HomeScreenState extends State<HomeScreen>
       default:
         _sb.stopGong();
     }
+    _flashStrike(false);
   }
 
   Color _instrumentColor() {
