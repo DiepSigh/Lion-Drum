@@ -31,15 +31,17 @@ of the preceding builds has not been confirmed.
 
 - Implementation committed as `bdc05ca`; build metadata sets `1.1.2+18` and About remains `v1.1.2`.
 - Flutter analysis is clean; 69 isolated UI tests and 10 isolated storage tests passed. Rendered dialog review covered English, Chinese, and Vietnamese, including larger text. These checks do not verify native audio or ads.
-- Signed AAB generation and manifest/signing verification are pending. Artifact metadata will record its source commit and SHA-256 beside the versioned bundle in `build/releases/1.1.2-18/`.
+- Signed AAB built from `7017bf5`: `build/releases/1.1.2-18/LionDanceKit-1.1.2-build18.aab` (64,862,989 bytes). SHA-256: `fbc83b1023db109c4bbbc4d878454f842b2bde5240238c963fb623a3acd36886`. The adjacent `build-info.json` and `SHA256SUMS.txt` record the source, identity, and validation.
+- Verified bundled package `com.DiepSigh.LionDanceKit`, version `1.1.2`, code `18`, minimum SDK 24, target/compile SDK 36, optional landscape hardware, and `sensorLandscape` activity orientation. JAR signature verifies with expected upload-certificate SHA1 `53:1B:10:76:0E:FF:11:9D:D3:F1:DA:16:1F:E1:7E:BF:8F:C0:E6:7C`.
+- Build emitted existing future-support warnings for Gradle/AGP/Kotlin. Signing checks reported the existing self-signed/SHA1withRSA certificate, no timestamp, and archive-layout/POSIX attribute warnings. No signing identity was changed.
 - Physical-device startup, audio/backing-track continuity, saved-beat upgrade compatibility, and ads remain unverified. No upload or publication is authorized by this build request.
 
 ## Earlier prepared release: 1.1.2 (17)
 
 Prepared November 20, 2026 at the user's request. Build 16 was uploaded, but Play
 blocked review because landscape hardware was implicitly required. Build 17 is
-the corrected replacement, not yet uploaded or published. Confirm no higher build
-number has been consumed in Play Console before uploading.
+the corrected replacement. The user has since confirmed that build 17 was uploaded;
+production publication is unconfirmed. The new build 18 supersedes this artifact.
 
 Patch scope: restored existing practice controls, compact menus, consistent shared
 presentation, and a menu website link. The four drum sounds and audio latency work
@@ -49,7 +51,7 @@ were already in the 1.1.1 source baseline and are not new 1.1.2 highlights.
 
 - Keep recorded drums playing while switching to cymbals or gong.
 - Choose drum sounds and adjust settings in compact landscape menus.
-- Visit YMT Lion Dance from About.
+- Visit YMT Lion Dance from the menu.
 
 ### Verification status
 
