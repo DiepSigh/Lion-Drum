@@ -2,6 +2,17 @@ import 'package:flutter/material.dart';
 
 import 'kit_styles.dart';
 
+/// Every app dialog uses the same centered heading typography.
+class KitDialogHeading extends StatelessWidget {
+  const KitDialogHeading(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(text, textAlign: TextAlign.center, style: KitStyles.dialogHeading);
+}
+
 /// Compact landscape dialog shell; Flutter owns focus, keyboard and dismissal.
 /// Use an internal scrolling body with [scrollable] false for a growing Library.
 class KitDialog extends StatelessWidget {
@@ -10,6 +21,7 @@ class KitDialog extends StatelessWidget {
     required this.content,
     this.actions,
     this.scrollable = true,
+    this.titlePadding = KitStyles.dialogTitlePadding,
     super.key,
   });
 
@@ -17,12 +29,13 @@ class KitDialog extends StatelessWidget {
   final Widget content;
   final List<Widget>? actions;
   final bool scrollable;
+  final EdgeInsets titlePadding;
 
   @override
   Widget build(BuildContext context) => AlertDialog(
     scrollable: scrollable,
     insetPadding: KitStyles.dialogInsetPadding,
-    titlePadding: KitStyles.dialogTitlePadding,
+    titlePadding: titlePadding,
     contentPadding: KitStyles.dialogContentPadding,
     actionsPadding: KitStyles.dialogActionsPadding,
     backgroundColor: KitStyles.dialogSurface,

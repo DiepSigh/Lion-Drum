@@ -1,5 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Keep the landscape layout without excluding devices via Play filtering. -->
+    <uses-feature
+        android:name="android.hardware.screen.landscape"
+        android:required="false"/>
     <application
         android:label="Lion Dance Kit"
         android:name="${applicationName}"

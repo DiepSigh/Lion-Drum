@@ -100,6 +100,12 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @startupLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Getting your instruments ready…'**
+  String get startupLoading;
+
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:

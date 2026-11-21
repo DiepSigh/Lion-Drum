@@ -1,18 +1,20 @@
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'l10n/app_localizations.dart';
+import 'app_info_dialogs.dart';
 import 'instrument_surface.dart';
 import 'performance_controls.dart';
 import 'saved_beat.dart';
+import 'saved_beats_dialog.dart';
 import 'soundboard.dart';
 import 'ui/kit_button.dart';
 import 'ui/kit_dialog.dart';
 import 'ui/kit_styles.dart';
+import 'ui/kit_startup_cover.dart';
 
 enum _SavedBeatFilter { name, date, duration }
 
@@ -64,12 +66,16 @@ class _HomeScreenState extends State<HomeScreen>
     // Let the loading screen draw before starting native audio and ad work.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      unawaited(_init());
-      unawaited(_initializeAds());
+      // Ads are optional: wait for their first outcome, with a bounded budget.
+      final adsReady = _initializeAds().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {},
+      );
+      unawaited(_init(adsReady: adsReady));
     });
   }
 
-  Future<void> _init() async {
+  Future<void> _init({Future<void>? adsReady}) async {
     try {
       await _sb.init();
     } catch (error, stack) {
@@ -90,11 +96,22 @@ class _HomeScreenState extends State<HomeScreen>
       if (mounted) {
         _showSnack(_l10n.savedBeatsLoadError);
       }
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
     }
+    if (!mounted) return;
+    // Decode visible/branding images before revealing the painted screen.
+    await Future.wait([
+      for (final asset in [
+        'assets/images/final.jpg',
+        'assets/images/LionIcon.png',
+        'assets/images/ymt-logo.png',
+      ])
+        precacheImage(AssetImage(asset), context),
+      ?adsReady,
+    ]);
+    if (!mounted) return;
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    setState(() => _loading = false);
   }
 
   Future<void> _initializeAds() async {
@@ -105,13 +122,14 @@ class _HomeScreenState extends State<HomeScreen>
     }
     try {
       await MobileAds.instance.initialize();
-      if (mounted) _loadAd();
+      if (mounted) await _loadAd();
     } catch (error, stack) {
       debugPrint('Ad initialization failed: $error\n$stack');
     }
   }
 
-  void _loadAd() {
+  Future<void> _loadAd() {
+    final settled = Completer<void>();
     _bannerAd = BannerAd(
       adUnitId: defaultTargetPlatform == TargetPlatform.android
           ? 'ca-app-pub-7760662598407173/2927518920'
@@ -120,15 +138,20 @@ class _HomeScreenState extends State<HomeScreen>
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
+          if (!settled.isCompleted) settled.complete();
           if (!mounted) {
             ad.dispose();
             return;
           }
           setState(() => _bannerLoaded = true);
         },
-        onAdFailedToLoad: (ad, _) => ad.dispose(),
+        onAdFailedToLoad: (ad, _) {
+          ad.dispose();
+          if (!settled.isCompleted) settled.complete();
+        },
       ),
     )..load();
+    return settled.future;
   }
 
   void _onTick(Duration elapsed) {
@@ -158,42 +181,12 @@ class _HomeScreenState extends State<HomeScreen>
     _strikes.value = primary ? next : -next;
   }
 
-  Future<void> _showInstrumentPicker() async {
+  void _switchInstrument(int mode) {
     if (_sb.recording) return;
-    final names = [_l10n.drum, _l10n.cymbals, _l10n.gong];
-    final selected = await showDialog<int>(
-      context: context,
-      builder: (context) => KitDialog(
-        title: Text(_l10n.instrument, style: const TextStyle(color: _gold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var mode = 0; mode < names.length; mode++)
-              SimpleDialogOption(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 12,
-                ),
-                onPressed: () => Navigator.of(context).pop(mode),
-                child: Row(
-                  children: [
-                    Icon(
-                      _mode == mode ? Icons.check : Icons.music_note_outlined,
-                      color: _gold,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(names[mode]),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (!mounted || selected == null || selected == _mode) return;
+    // Only mute the live voices; the drum backing track keeps its own clock.
     _sb.stopCymbal();
     _sb.stopGong();
-    setState(() => _mode = selected);
+    setState(() => _mode = mode);
   }
 
   String _drumSoundName(DrumSound sound) => switch (sound) {
@@ -210,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, dialogSetState) => KitDialog(
           scrollable: true,
-          title: Text(_l10n.drumSound, style: const TextStyle(color: _gold)),
+          title: KitDialogHeading(_l10n.drumSound),
           content: SizedBox(
             width: 360,
             child: Column(
@@ -358,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen>
       builder: (dialogContext) {
         return KitDialog(
           scrollable: true,
-          title: Text(l10n.language, style: const TextStyle(color: _gold)),
+          title: KitDialogHeading(l10n.language),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -426,60 +419,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _showMainMenu() async {
-    final l10n = _l10n;
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        return KitDialog(
-          scrollable: true,
-          title: Row(
-            children: [
-              Image.asset(
-                'assets/images/ymt-logo.png',
-                width: 36,
-                height: 36,
-                fit: BoxFit.contain,
-                semanticLabel: 'YMT Lion Dance',
-              ),
-              const SizedBox(width: 12),
-              Flexible(
-                child: Text(l10n.menu, style: const TextStyle(color: _gold)),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                width: double.infinity,
-                child: _dialogButton(
-                  l10n.about,
-                  () => _closeDialogThen(dialogContext, _showAboutDialog),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: _dialogButton(
-                  l10n.language,
-                  () => _closeDialogThen(dialogContext, _showLanguageDialog),
-                ),
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: _dialogButton(l10n.visitYmtWebsite, _openYmtWebsite),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(l10n.close, style: const TextStyle(color: _gold)),
-            ),
-          ],
-        );
-      },
+      builder: (dialogContext) => AppMenuDialog(
+        onAbout: () => _closeDialogThen(dialogContext, _showAboutDialog),
+        onLanguage: () => _closeDialogThen(dialogContext, _showLanguageDialog),
+      ),
     );
   }
 
@@ -497,118 +442,58 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _showBeatsDialog() async {
     if (_sb.recording || _sb.replaying || _beatStore == null) return;
-    final l10n = _l10n;
-
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) {
-        final size = MediaQuery.of(dialogContext).size;
-        final dialogWidth = min(size.width * 0.75, 420.0);
-        final dialogHeight = min(size.height * 0.6, 320.0);
-
-        return StatefulBuilder(
-          builder: (context, dialogSetState) {
-            final sortedBeats = _sortedSavedBeats();
-
-            return KitDialog(
-              scrollable: false,
-              title: Text(
-                l10n.savedBeats,
-                style: const TextStyle(color: _gold),
-              ),
-              content: SizedBox(
-                width: dialogWidth,
-                height: dialogHeight,
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _dialogButton(
-                              l10n.saveCurrent,
-                              _sb.hasRecording
-                                  ? () => _closeDialogThen(
-                                      dialogContext,
-                                      _saveCurrentBeat,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      _buildSavedBeatFilter(dialogSetState),
-                      const SizedBox(height: 10),
-                      if (_savedBeats.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Text(
-                            l10n.noSavedBeats,
-                            style: const TextStyle(color: Colors.white60),
-                          ),
-                        )
-                      else
-                        Column(
-                          children: [
-                            for (final beat in sortedBeats)
-                              _buildSavedBeatRow(beat, dialogContext),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text(l10n.close, style: const TextStyle(color: _gold)),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, dialogSetState) => SavedBeatsDialog(
+          filter: _buildSavedBeatFilter(dialogSetState),
+          beats: [
+            for (final beat in _sortedSavedBeats())
+              _buildSavedBeatRow(beat, dialogContext),
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildSavedBeatFilter(StateSetter dialogSetState) {
     final l10n = _l10n;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.black38,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: _gold.withAlpha(120)),
       ),
-      child: Row(
-        children: [
-          Text(
-            l10n.filterBy,
-            style: const TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          const Spacer(),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<_SavedBeatFilter>(
-              value: _savedBeatFilter,
-              dropdownColor: KitStyles.dialogSurface,
-              iconEnabledColor: _gold,
-              style: const TextStyle(color: _gold, fontWeight: FontWeight.w600),
-              items: [
-                for (final filter in _SavedBeatFilter.values)
-                  DropdownMenuItem(
-                    value: filter,
-                    child: Text(_savedBeatFilterLabel(filter)),
-                  ),
-              ],
-              onChanged: (filter) {
-                if (filter == null) return;
-                setState(() => _savedBeatFilter = filter);
-                dialogSetState(() {});
-              },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          children: [
+            Text(l10n.filterBy, style: KitStyles.libraryFilterLabel),
+            const Spacer(),
+            DropdownButtonHideUnderline(
+              child: DropdownButton<_SavedBeatFilter>(
+                value: _savedBeatFilter,
+                isDense: true,
+                iconSize: 18,
+                dropdownColor: KitStyles.dialogSurface,
+                iconEnabledColor: _gold,
+                style: KitStyles.libraryFilterSelection,
+                items: [
+                  for (final filter in _SavedBeatFilter.values)
+                    DropdownMenuItem(
+                      value: filter,
+                      child: Text(_savedBeatFilterLabel(filter)),
+                    ),
+                ],
+                onChanged: (filter) {
+                  if (filter == null) return;
+                  setState(() => _savedBeatFilter = filter);
+                  dialogSetState(() {});
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -840,7 +725,7 @@ class _HomeScreenState extends State<HomeScreen>
       context: context,
       builder: (context) {
         return KitDialog(
-          title: Text(l10n.nameBeat, style: const TextStyle(color: _gold)),
+          title: KitDialogHeading(l10n.nameBeat),
           content: TextField(
             controller: controller,
             autofocus: true,
@@ -881,7 +766,7 @@ class _HomeScreenState extends State<HomeScreen>
       context: context,
       builder: (context) {
         return KitDialog(
-          title: Text(title, style: const TextStyle(color: _gold)),
+          title: KitDialogHeading(title),
           content: Text(message, style: const TextStyle(color: Colors.white70)),
           actions: [
             TextButton(
@@ -972,42 +857,36 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       );
     }
-    if (_loading) {
-      return const Scaffold(
-        backgroundColor: Colors.black,
-        body: Center(
-          child: CircularProgressIndicator(color: KitStyles.brandRed),
-        ),
-      );
-    }
-
     return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.bottomCenter,
-                  radius: 1.3,
-                  colors: KitStyles.backgroundColors,
+      body: KitStartupCover(
+        loading: _loading,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment.bottomCenter,
+                    radius: 1.3,
+                    colors: KitStyles.backgroundColors,
+                  ),
                 ),
-              ),
-              child: IgnorePointer(
-                child: Opacity(
-                  opacity: 0.045,
-                  child: Image.asset(
-                    'assets/images/final.jpg',
-                    fit: BoxFit.cover,
-                    excludeFromSemantics: true,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: 0.045,
+                    child: Image.asset(
+                      'assets/images/final.jpg',
+                      fit: BoxFit.cover,
+                      excludeFromSemantics: true,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned.fill(child: _buildInstrumentArea()),
-          _buildTopBar(),
-        ],
+            Positioned.fill(child: _buildInstrumentArea()),
+            _buildTopBar(),
+          ],
+        ),
       ),
     );
   }
@@ -1051,7 +930,7 @@ class _HomeScreenState extends State<HomeScreen>
       canUseLibrary: _beatStore != null,
       status: _performanceStatus,
       onMenu: _showMainMenu,
-      onInstrument: _showInstrumentPicker,
+      onInstrument: _switchInstrument,
       onSound: _showDrumPicker,
       onRecord: _toggleRecord,
       onReplay: _toggleReplay,
@@ -1064,46 +943,10 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _showAboutDialog() async {
-    final l10n = _l10n;
     await showDialog<void>(
       context: context,
-      builder: (dialogContext) => KitDialog(
-        title: Text(l10n.appTitle, style: const TextStyle(color: _gold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/images/LionIcon.png', height: 40),
-                const SizedBox(width: 12),
-                const Text('v1.1.2', style: TextStyle(color: Colors.white54)),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.aboutDescription,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.copyright,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.close, style: const TextStyle(color: _gold)),
-          ),
-        ],
-      ),
+      builder: (dialogContext) =>
+          AppAboutDialog(version: 'v1.1.2', onVisitWebsite: _openYmtWebsite),
     );
   }
 }

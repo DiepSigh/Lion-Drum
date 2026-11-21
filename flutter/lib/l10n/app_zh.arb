@@ -1,5 +1,6 @@
 {
   "@@locale": "zh",
+  "startupLoading": "正在准备乐器…",
   "appTitle": "舞狮鼓乐",
   "languageEnglish": "English",
   "languageChinese": "中文",

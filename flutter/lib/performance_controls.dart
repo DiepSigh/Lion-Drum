@@ -35,7 +35,7 @@ class PerformanceControls extends StatelessWidget {
   final bool canUseLibrary;
   final String status;
   final VoidCallback onMenu;
-  final VoidCallback onInstrument;
+  final ValueChanged<int> onInstrument;
   final VoidCallback onSound;
   final VoidCallback onRecord;
   final VoidCallback onReplay;
@@ -93,8 +93,10 @@ class PerformanceControls extends StatelessWidget {
                     KitToolbarButton(
                       label: modeName,
                       tooltip: l10n.switchInstrument,
-                      icon: Icons.keyboard_arrow_down,
-                      onPressed: recording ? null : onInstrument,
+                      icon: Icons.sync,
+                      onPressed: recording
+                          ? null
+                          : () => onInstrument((mode + 1) % 3),
                     ),
                     if (mode == 0)
                       KitToolbarButton(

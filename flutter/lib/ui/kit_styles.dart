@@ -16,11 +16,22 @@ abstract final class KitStyles {
 
   static const controlHeight = 44.0;
   static const choiceHeight = 48.0;
+  static const dialogHeading = TextStyle(color: gold, fontSize: 16);
+  static const libraryFilterLabel = TextStyle(
+    color: Colors.white70,
+    fontSize: 12,
+  );
+  static const libraryFilterSelection = TextStyle(
+    color: gold,
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+  );
   static const dialogInsetPadding = EdgeInsets.symmetric(
     horizontal: 24,
     vertical: 12,
   );
   static const dialogTitlePadding = EdgeInsets.fromLTRB(20, 12, 20, 8);
+  static const compactDialogTitlePadding = EdgeInsets.fromLTRB(20, 6, 20, 4);
   static const dialogContentPadding = EdgeInsets.symmetric(horizontal: 20);
   static const dialogActionsPadding = EdgeInsets.fromLTRB(12, 0, 12, 4);
   static const dialogShape = RoundedRectangleBorder(

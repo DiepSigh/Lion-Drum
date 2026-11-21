@@ -1,5 +1,6 @@
 {
   "@@locale": "en",
+  "startupLoading": "Getting your instruments ready…",
   "appTitle": "Lion Dance Kit",
   "languageEnglish": "English",
   "languageChinese": "中文",

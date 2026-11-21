@@ -5,8 +5,160 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lion_dance_kit/instrument_surface.dart';
 import 'package:lion_dance_kit/l10n/app_localizations.dart';
 import 'package:lion_dance_kit/performance_controls.dart';
+import 'package:lion_dance_kit/ui/kit_startup_cover.dart';
+import 'package:lion_dance_kit/ui/kit_styles.dart';
 
 void main() {
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets('instrument button cycles all modes during replay in $locale', (
+      tester,
+    ) async {
+      var mode = 0;
+      var playbackToggles = 0;
+      late AppLocalizations l10n;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                l10n = AppLocalizations.of(context);
+                return PerformanceControls(
+                  mode: mode,
+                  soundName: l10n.drumOriginal,
+                  recording: false,
+                  replaying: true,
+                  hasRecording: true,
+                  canUseLibrary: true,
+                  status: l10n.playing,
+                  onMenu: () {},
+                  onInstrument: (next) => setState(() => mode = next),
+                  onSound: () {},
+                  onRecord: () {},
+                  onReplay: () => playbackToggles++,
+                  onSave: () {},
+                  onLibrary: () {},
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final names = [l10n.drum, l10n.cymbals, l10n.gong];
+      for (final expected in [1, 2, 0]) {
+        await tester.tap(find.widgetWithText(TextButton, names[mode]));
+        await tester.pumpAndSettle();
+        expect(mode, expected);
+        expect(
+          find.widgetWithText(TextButton, names[expected]),
+          findsOneWidget,
+        );
+        expect(find.byType(AlertDialog), findsNothing);
+        expect(find.widgetWithText(TextButton, l10n.stop), findsOneWidget);
+        expect(playbackToggles, 0);
+      }
+    });
+  }
+
+  for (final locale in AppLocalizations.supportedLocales) {
+    testWidgets('startup cover blocks practice until ready in $locale', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(432, 320);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final strikes = ValueNotifier(0);
+      addTearDown(strikes.dispose);
+      final loading = ValueNotifier(true);
+      addTearDown(loading.dispose);
+      var hits = 0;
+      var builds = 0;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: KitStyles.theme,
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: MediaQuery(
+            data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+            child: Scaffold(
+              body: ValueListenableBuilder<bool>(
+                valueListenable: loading,
+                builder: (context, busy, _) => KitStartupCover(
+                  loading: busy,
+                  child: Builder(
+                    builder: (context) {
+                      builds++;
+                      return InstrumentSurface(
+                        color: Colors.brown,
+                        primaryLabel: AppLocalizations.of(context).drum,
+                        secondaryLabel: AppLocalizations.of(context).side,
+                        onPrimaryTap: () => hits++,
+                        onSecondaryTap: () => hits++,
+                        strikes: strikes,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(builds, greaterThan(0)); // Prepare the main UI under the cover.
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tapAt(const Offset(216, 310));
+      await tester.tapAt(const Offset(10, 310));
+      expect(hits, 0);
+      loading.value = false;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 2999));
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.tapAt(const Offset(216, 310));
+      expect(hits, 0);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      await tester.tapAt(const Offset(216, 310));
+      await tester.tapAt(const Offset(10, 310));
+      expect(hits, 2);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets(
+    'welcome cover keeps waiting when startup exceeds three seconds',
+    (tester) async {
+      final loading = ValueNotifier(true);
+      addTearDown(loading.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ValueListenableBuilder<bool>(
+              valueListenable: loading,
+              builder: (context, busy, _) => KitStartupCover(
+                loading: busy,
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(seconds: 4));
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      loading.value = false;
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    },
+  );
+
   for (final locale in AppLocalizations.supportedLocales) {
     for (final mode in [1, 2]) {
       for (final state in ['empty', 'ready', 'playing']) {
@@ -37,7 +189,7 @@ void main() {
                         canUseLibrary: true,
                         status: replaying ? l10n.playing : l10n.ready,
                         onMenu: () {},
-                        onInstrument: () => instrumentOpens++,
+                        onInstrument: (_) => instrumentOpens++,
                         onSound: () {},
                         onRecord: () {},
                         onReplay: () => replayToggles++,
@@ -169,7 +321,7 @@ void main() {
                         canUseLibrary: true,
                         status: l10n.ready,
                         onMenu: () {},
-                        onInstrument: () => instrumentOpens++,
+                        onInstrument: (_) => instrumentOpens++,
                         onSound: () {},
                         onRecord: () {},
                         onReplay: () {},
@@ -224,7 +376,7 @@ void main() {
             canUseLibrary: true,
             status: 'Recording',
             onMenu: () {},
-            onInstrument: () {},
+            onInstrument: (_) {},
             onSound: () {},
             onRecord: () => stops++,
             onReplay: () {},

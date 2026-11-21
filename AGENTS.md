@@ -26,7 +26,7 @@ before relying on stale assumptions; ask when the intended behavior is unclear.
 
 - Current project version: 1.1.2, with the authoritative version/build in `flutter/pubspec.yaml`.
 - Project SDK guidance: Flutter 3.47.6 stable; use a compatible SDK for the current dependencies.
-- Targets: Android API 37 and iOS 16.0+. Verify the actual iOS project deployment target before an iOS release.
+- Android compile/target SDK follows the Flutter defaults in Gradle; verify the built manifest rather than assuming an API level. The current artifact values are recorded in the release checklist. iOS targets 16.0+; verify the actual Xcode deployment target before an iOS release.
 - Package name: `com.DiepSigh.LionDanceKit`; preserve the existing Play Store identity.
 - Keep landscape, immersive play and low-latency pointer-down/multitouch handling.
 - Keep recording/storage validation and saved-beat compatibility when refactoring.
