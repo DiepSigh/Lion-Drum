@@ -8,19 +8,33 @@ after subsequent UI or behavior changes.
 
 ## Pending release highlights
 
-- Show a welcome screen for at least three seconds while instruments and the practice screen get ready.
-- Switch directly between drum, cymbals, and gong with one tap.
+The following highlights are included in prepared build 18 and remain unpublished
+until the Play release is confirmed. Continue maintaining pending notes here;
+[the release policy](../AGENTS.md#release-policy) governs versioning.
+
+## Prepared release: 1.1.2 (18)
+
+Prepared November 20, 2026. The user confirmed that 17 is the highest build number
+uploaded across all Play tracks; build 18 is the next upload code. Keep product
+version 1.1.2 because this continues the prepared patch release with startup and
+UI polish, rather than adding a new product capability. Production publication
+of the preceding builds has not been confirmed.
+
+### User-facing notes
+
+- Get ready to play with a clear welcome and loading screen.
+- Switch instruments with one tap while recorded drums keep playing.
+- Use compact landscape menus and a simpler saved-beat Library.
 - Find the YMT logo and website link together in About.
-- Browse saved beats in a more compact Library without a duplicate Save button.
 
-These changes are pending; the prepared notes below remain unpublished until the
-Play release is confirmed.
+### Verification status
 
-Maintain this short list during normal work. The [release policy](../AGENTS.md#release-policy)
-governs version bumps; [the reference](../reference.md#release-documentation) owns
-the source-to-Android version mapping and release-note conventions.
+- Implementation committed as `bdc05ca`; build metadata sets `1.1.2+18` and About remains `v1.1.2`.
+- Flutter analysis is clean; 69 isolated UI tests and 10 isolated storage tests passed. Rendered dialog review covered English, Chinese, and Vietnamese, including larger text. These checks do not verify native audio or ads.
+- Signed AAB generation and manifest/signing verification are pending. Artifact metadata will record its source commit and SHA-256 beside the versioned bundle in `build/releases/1.1.2-18/`.
+- Physical-device startup, audio/backing-track continuity, saved-beat upgrade compatibility, and ads remain unverified. No upload or publication is authorized by this build request.
 
-## Prepared release: 1.1.2 (17)
+## Earlier prepared release: 1.1.2 (17)
 
 Prepared November 20, 2026 at the user's request. Build 16 was uploaded, but Play
 blocked review because landscape hardware was implicitly required. Build 17 is
@@ -39,13 +53,13 @@ were already in the 1.1.1 source baseline and are not new 1.1.2 highlights.
 
 ### Verification status
 
-- Product version and About label agree on 1.1.2; `pubspec.yaml` now specifies build 17.
+- Product version and About label agree on 1.1.2; that artifact used build 17.
 - Corrected build 17 is `build/releases/1.1.2-17/LionDanceKit-1.1.2-build17.aab`. Its SHA-256 is `a90126f93194186af04abbcc2993d3c09d41c2d63048cdf0ace94fda2ccc9380`. It includes the manifest/build-number correction on top of `a356eb0`; `source-changes.patch` and `build-info.json` beside it record that uncommitted delta.
 - Inspected build 17's bundled manifest: landscape hardware explicitly has `required="false"`, the main activity retains `sensorLandscape`, and package/version/build are correct. Verified its JAR signature and expected upload certificate SHA1 `53:1B:10:76:0E:FF:11:9D:D3:F1:DA:16:1F:E1:7E:BF:8F:C0:E6:7C`. No APK was generated for this replacement.
 - Shared-UI implementation passed Flutter analysis, web compilation, 48 isolated UI/storage tests, and representative rendered dialog review before the version-only update.
 - Earlier build 16 AAB and APK were built November 20, 2026 from commit `a356eb0`. The AAB was uploaded and is superseded by corrected build 17; production publication has not been confirmed.
 - Verified the AAB's package/version directly from its manifest and verified its JAR signature. Verified the APK with `aapt` and `apksigner`; both artifacts use package `com.DiepSigh.LionDanceKit` and the same signing certificate.
-- Earlier signing investigation: build 16's local AAB copies matched the expected upload certificate; a reported rejection identified a different certificate (`8D:1C:7E:AA:FD:49:AF:8D:AB:2A:8D:26:3E:68:1A:94:CB:BA:2C:5A`). Historical build 16 file SHA-256: `4c8835549c17e5b92ac2bb649a48fe1893884e8bf092e9cccf761bed31f27be1`. Use build 17 for the current replacement upload.
+- Earlier signing investigation: build 16's local AAB copies matched the expected upload certificate; a reported rejection identified a different certificate (`8D:1C:7E:AA:FD:49:AF:8D:AB:2A:8D:26:3E:68:1A:94:CB:BA:2C:5A`). Historical build 16 file SHA-256: `4c8835549c17e5b92ac2bb649a48fe1893884e8bf092e9cccf761bed31f27be1`. This is a historical signing record; use the current prepared artifact above.
 - Actual artifacts have minimum SDK 24 and target/compile SDK 36. This follows the current Flutter defaults, rather than the older project overview's API 37 claim.
 - Versioned files and SHA-256 metadata are in `build/releases/1.1.2-16/`: `LionDanceKit-1.1.2-16.aab` for Play Console and `LionDanceKit-1.1.2-16.apk` for direct installation. `build-info.json` records hashes, signing identity, source commit, and verification limits. Build output is ignored by Git.
 - Android tooling emitted future-version support warnings. JAR verification also reported the existing self-signed certificate and archive-layout warnings; APK v2 signature verification passed. Physical-device installation and Play Console validation have not been performed.
