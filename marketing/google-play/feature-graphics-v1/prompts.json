@@ -1,0 +1,22 @@
+{
+  "tool": "Built-in image_gen",
+  "purpose": "Google Play feature graphics; illustrative artwork, not screenshots",
+  "exports": {
+    "dimensions": [
+      1024,
+      500
+    ],
+    "format": "24-bit RGB PNG, opaque",
+    "processing": "Aspect-preserving centered crop and high-quality downsample from generated originals"
+  },
+  "prompts": {
+    "en": "Use case: ads-marketing\nAsset type: Google Play feature graphic for Lion Dance Kit. Generate a finished wide banner, exactly 1024 x 500 pixels (2.048:1).\nPrimary request: Beautiful polished promotional artwork for a mobile lion dance percussion practice app, in its established rich dark burgundy and warm gold palette.\nScene: subtle burgundy silk/paper texture with exceptionally restrained gold flowing rhythm arcs; clean, spacious editorial design, not a busy festival poster.\nSubject: on the right half, a physically coherent Chinese southern lion dance barrel drum with red lacquer body, tan hide head, gold studs and two wooden sticks, accompanied by a pair of bronze Chinese cymbals with red fabric handles and a bronze gong. Elegant high-quality illustrated product still life with warm dimensional lighting. No lions, dragons, people, screens or phone frames.\nComposition: wide, keep all important content comfortably within 8 percent margins. Left half is generous clear burgundy negative space for legible text. Instruments occupy right half, drum dominant, cymbals and gong secondary, no clipping of key subjects.\nText verbatim, left aligned, large clean cream/gold modern typography:\n\"Lion Dance Kit\"\n\"Drum. Cymbals. Gong.\"\n\"Practice your rhythm.\"\nTitle most prominent, second and third lines smaller and clear. Natural capitalization exactly as supplied. No other text, no watermark, no app/store badges, no claims about ranking, price or downloads. This is illustrative promotional art, not an app screenshot.\nOutput opaque, full bleed, square corners.",
+    "zh": "Use case: text-localization. Edit the referenced promotional banner. Preserve the burgundy and gold artwork, instruments, lighting, texture and overall layout. Replace only the three English text lines with Simplified Chinese, using clear beautiful correctly rendered Chinese typography, same gold/cream color, left aligned. Exact text:\n\"舞狮乐器\"\n\"鼓 · 钹 · 锣\"\n\"随时练习节奏\"\nTitle largest, instrument line and tagline smaller. Keep at least 8% left margin and comfortably readable text with right edge clear of the drum. No additional text. Output wide feature graphic 1024 x 500 pixels, opaque full bleed.",
+    "vi": "Use case: text-localization. Edit the referenced English promotional banner. Preserve the burgundy and gold artwork, instruments, lighting, texture and overall layout. Replace only the three text lines with this exact text, retaining all Vietnamese diacritics:\n\"Lion Dance Kit\"\n\"Trống · Chũm chọe · Cồng\"\n\"Luyện nhịp mỗi ngày\"\nUse clear modern cream/gold typography. Title largest, other lines smaller and readable. Left aligned, with 8 percent margin from left and right edges of lettering comfortably clear of drum. No additional text. Output wide feature graphic 1024 x 500 pixels, opaque full bleed."
+  },
+  "altText": {
+    "en": "Lion Dance Kit with a red lion dance drum, bronze cymbals and gong on a burgundy and gold background.",
+    "zh": "酒红色与金色背景上的舞狮乐器：红色狮鼓、铜钹和锣。",
+    "vi": "Lion Dance Kit với trống đỏ, chũm chọe và cồng trên nền đỏ sẫm và vàng."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "backgroundTool": "Built-in image_gen",
+  "backgroundPrompt": "Use case: ads-marketing. Asset type: reusable background for landscape Google Play screenshot graphics, 1920 x 1080 pixels, 16:9.\nCreate an elegant quiet dark oxblood burgundy background, very subtle woven paper texture, restrained warm gold thin flowing rhythm lines only in the top-right corner and extreme edges. Match a traditional lion dance percussion app's dark burgundy and muted gold color scheme. Large uncluttered plain dark-burgundy areas everywhere, especially upper-left and across the lower three quarters, for later typesetting and compositing authentic app screenshots. Sophisticated restrained graphic design, excellent contrast for cream text. No text or letters, no symbols, no instruments, no people, no lion/dragon illustration, no phone or device frames, no UI, no watermark. Full bleed, opaque, square corners.",
+  "screenshots": "Original user-provided screenshots composited without changing UI; scaled proportionally without cropping.",
+  "exports": "1920 x 1080 opaque 24-bit RGB PNG",
+  "captionLocales": ["en", "vi"],
+  "localization": "Vietnamese captions are typeset using the existing export script. Original screenshots retain their captured interface language.",
+  "altTextVi": {
+    "drum": "Màn hình luyện trống của Lion Dance Kit với các nút ghi âm, phát lại, lưu và thư viện.",
+    "language": "Bảng chọn ngôn ngữ của Lion Dance Kit với tiếng Anh, tiếng Trung và tiếng Việt."
+  },
+  "altText": {
+    "drum": "Lion Dance Kit drum practice screen with record, playback, save and Library controls.",
+    "language": "Lion Dance Kit language selector showing English, Chinese and Vietnamese."
+  }
+}

@@ -82,6 +82,28 @@ changed; do not split or rewrite the audio state machine during a style-only tas
 
 ## Assets and platform integration
 
+Store listing copy in `marketing/google-play/listing-translations-v1.json`
+contains English (`en-US`), Vietnamese (`vi`), and Simplified Chinese (`zh-CN`)
+app names, short descriptions, and full descriptions. The adjacent CSV is the
+structured import file for Play Console's AI-assisted translation import. Copy
+describes current repository capabilities; imported locale/field mappings and
+published-build feature parity must be reviewed before applying it. Text and
+length checks do not verify acceptance by Play Console. Upload localized images
+separately in each language's listing.
+
+Store promotional artwork lives in `marketing/google-play/feature-graphics-v1/`:
+English, Simplified Chinese, and Vietnamese opaque 1024 x 500 PNG feature graphics,
+with retained generated originals, prompt metadata, and a reproducible export
+script. These are illustrated banners, not app screenshots. Their creation does
+not indicate a store upload or a published app release.
+
+Phone listing graphics in `marketing/google-play/phone-graphics-v1/` use two
+user-provided screenshots: Drum and Language. The 1920 x 1080 opaque PNGs pair
+unchanged, proportionally scaled screenshot content with short English or Vietnamese captions
+and a generated burgundy/gold backdrop. Sources, background prompt, and export
+script are retained together. These graphics do not establish published-build
+parity or physical-device audio/ad validation.
+
 `pubspec.yaml` owns asset registration and dependency versions. SoLoud provides
 low-latency audio; `google_mobile_ads` provides mobile banners; `url_launcher`
 handles the website action. Ad initialization is deferred by `HomeScreen` and is
